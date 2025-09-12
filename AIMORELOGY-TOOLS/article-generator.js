@@ -58,7 +58,11 @@ class ArticleGeneratorModule {
 
         this.container = container;
         this.renderInterface();
-        this.bindEvents();
+        
+        // 使用 setTimeout 确保 DOM 更新完成后再绑定事件
+        setTimeout(() => {
+            this.bindEvents();
+        }, 0);
     }
 
     // 渲染界面
@@ -414,23 +418,32 @@ class ArticleGeneratorModule {
     // 绑定事件
     bindEvents() {
         console.log('开始绑定事件...');
+        console.log('容器元素:', this.container);
+        
+        if (!this.container) {
+            console.error('容器元素不存在，无法绑定事件');
+            return;
+        }
         
         const generateBtn = this.container.querySelector('#generate-btn');
         const copyBtn = this.container.querySelector('#copy-btn');
         
-        console.log('找到的按钮:', {
-            generateBtn: !!generateBtn,
-            copyBtn: !!copyBtn
+        console.log('查找按钮结果:', {
+            generateBtn: generateBtn,
+            copyBtn: copyBtn,
+            containerHTML: this.container.innerHTML.substring(0, 200) + '...'
         });
         
         if (generateBtn) {
             console.log('绑定生成按钮点击事件');
-            generateBtn.addEventListener('click', () => {
+            generateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 console.log('生成按钮被点击！');
                 this.handleGenerate();
             });
         } else {
             console.error('未找到生成按钮 (#generate-btn)');
+            console.log('容器内所有按钮:', this.container.querySelectorAll('button'));
         }
         
         if (copyBtn) {
@@ -444,9 +457,17 @@ class ArticleGeneratorModule {
             if (isLoggedIn) {
                 this.setCurrentUser(userData);
                 this.renderInterface();
+                // 重新绑定事件
+                setTimeout(() => {
+                    this.bindEvents();
+                }, 0);
             } else {
                 this.setCurrentUser(null);
                 this.renderInterface();
+                // 重新绑定事件
+                setTimeout(() => {
+                    this.bindEvents();
+                }, 0);
             }
         });
     }

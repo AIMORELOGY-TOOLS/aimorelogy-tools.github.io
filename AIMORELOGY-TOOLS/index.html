@@ -184,55 +184,57 @@
             </ul>
         </div>
         
-        <!-- 微信登录按钮 -->
-        <button class="wechat-login-btn" onclick="WechatLogin.open()">
-            <span>微</span>
-            微信登录
-        </button>
+        <!-- 微信登录容器 -->
+        <div id="wechat-login-container"></div>
         
         <a href="https://github.com/Jeff010726/AIMORELOGY-TOOLS" class="github-link" target="_blank">
             查看源码 GitHub
         </a>
     </div>
 
-    <!-- 引入微信登录组件 -->
-    <script>
-        // 配置后端 API 地址
-        const API_BASE_URL = 'https://wechat-login-worker.internal-articleno.workers.dev';
-    </script>
-    <script src="wechat-login-component.js"></script>
+    <!-- 引入微信登录模块 -->
+    <script src="wechat-login.js"></script>
     
     <script>
-        // 页面加载时检查登录状态
-        window.addEventListener('load', function() {
-            updateLoginStatus();
-        });
+        let wechatLogin;
         
-        // 监听登录成功事件
-        window.addEventListener('wechatLoginSuccess', function(event) {
-            console.log('登录成功:', event.detail);
-            updateLoginStatus();
-        });
-        
-        // 监听退出登录事件
-        window.addEventListener('wechatLogout', function() {
-            console.log('已退出登录');
-            updateLoginStatus();
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 创建微信登录实例
+            wechatLogin = new WeChatLoginModule({
+                apiBaseUrl: 'https://wechat-login-worker.internal-articleno.workers.dev'
+            });
+            
+            // 渲染到容器
+            const container = document.getElementById('wechat-login-container');
+            wechatLogin.render(container);
+            
+            // 监听登录状态变化
+            document.addEventListener('wechatLoginStatusChange', function(event) {
+                const { isLoggedIn, userData } = event.detail;
+                updateLoginStatus(isLoggedIn, userData);
+            });
+            
+            // 初始检查登录状态
+            setTimeout(() => {
+                const currentUser = wechatLogin.getCurrentUser();
+                updateLoginStatus(!!currentUser, currentUser);
+            }, 100);
         });
         
         // 更新登录状态显示
-        function updateLoginStatus() {
-            const status = WechatLogin.checkStatus();
+        function updateLoginStatus(isLoggedIn, userData) {
             const statusElement = document.getElementById('loginStatus');
             
-            if (status.isLoggedIn) {
+            if (isLoggedIn && userData) {
                 statusElement.innerHTML = `
                     <div class="user-info">
                         <div><strong>登录状态:</strong> 已登录</div>
-                        <div><strong>OpenID:</strong> ${status.openid}</div>
-                        <div><strong>登录时间:</strong> ${new Date(status.loginTime).toLocaleString()}</div>
-                        <div><strong>Token:</strong> ${status.token.substring(0, 20)}...</div>
-                        <button class="logout-btn" onclick="WechatLogin.logout()">退出登录</button>
+                        <div><strong>用户ID:</strong> ${userData.userid}</div>
+                        <div><strong>昵称:</strong> ${userData.nickname}</div>
+                        <div><strong>等级:</strong> ${userData.level}</div>
+                        <div><strong>登录时间:</strong> ${new Date(userData.loginTime).toLocaleString()}</div>
+                        <div><strong>Token:</strong> ${userData.token ? userData.token.substring(0, 20) + '...' : '无'}</div>
                     </div>
                 `;
             } else {

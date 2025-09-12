@@ -17,29 +17,55 @@ class WeChatLoginModule {
         this.currentUser = null;
         
         // 初始化时检查登录状态
-        this.checkLoginStatus();
+        this.checkLoginStatus().catch(error => {
+            console.error('检查登录状态失败:', error);
+        });
     }
 
     // 检查本地存储的登录状态
-    checkLoginStatus() {
+    async checkLoginStatus() {
         const stored = localStorage.getItem(this.config.storageKey);
         if (stored) {
             try {
                 const userData = JSON.parse(stored);
                 // 检查 token 是否过期
                 if (userData.token && userData.expireTime > Date.now()) {
-                    this.currentUser = userData;
-                    this.onLoginStatusChange(true, userData);
-                    return true;
+                    // 验证服务器端token有效性
+                    const isValid = await this.validateToken(userData.token);
+                    if (isValid) {
+                        this.currentUser = userData;
+                        this.onLoginStatusChange(true, userData);
+                        return true;
+                    }
                 }
             } catch (error) {
                 console.error('解析用户数据失败:', error);
             }
         }
         
-        // 清除过期数据
+        // 清除过期或无效数据
         this.logout();
         return false;
+    }
+
+    // 验证token有效性
+    async validateToken(token) {
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/validate_token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ token })
+            });
+            
+            const data = await response.json();
+            return data.success && data.valid;
+        } catch (error) {
+            console.error('验证token失败:', error);
+            return false;
+        }
     }
 
     // 渲染登录按钮或用户信息

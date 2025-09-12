@@ -49,6 +49,8 @@ export default {
         return await handleAdminDeleteUser(request, env);
       } else if (url.pathname === '/admin/clear_all_users') {
         return await handleAdminClearAllUsers(request, env);
+      } else if (url.pathname === '/validate_token') {
+        return await handleValidateToken(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -164,6 +166,138 @@ async function handleWechatEvent(request, env, ctx) {
       headers: { 
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'no-cache'
+      }
+    });
+  }
+}
+
+// 验证token有效性
+async function handleValidateToken(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  try {
+    if (request.method !== 'POST') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '仅支持POST请求'
+      }), {
+        status: 405,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const body = await request.json();
+    const { token } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 解析token获取openid
+    const tokenParts = token.split(':');
+    if (tokenParts.length !== 3) {
+      return new Response(JSON.stringify({
+        success: false,
+        valid: false,
+        error: 'token格式无效'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const openid = tokenParts[0];
+    
+    // 从KV存储中获取用户数据
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    
+    if (!userData) {
+      return new Response(JSON.stringify({
+        success: true,
+        valid: false,
+        error: '用户不存在'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const user = JSON.parse(userData);
+    
+    // 检查token是否匹配
+    if (user.token !== token) {
+      return new Response(JSON.stringify({
+        success: true,
+        valid: false,
+        error: 'token无效'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 检查token是否过期
+    if (user.expireTime && user.expireTime < Date.now()) {
+      return new Response(JSON.stringify({
+        success: true,
+        valid: false,
+        error: 'token已过期'
+      }), {
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      valid: true,
+      user: {
+        openid: user.openid,
+        nickname: user.nickname,
+        level: user.level,
+        usage: user.usage
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('验证token失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
       }
     });
   }

@@ -200,41 +200,13 @@ class WeChatLoginModule {
         // 绑定模块实例到容器
         this.container.__wechatModule = this;
         
-        // 绑定退出按钮点击事件
-        const logoutBtn = this.container.querySelector('#wechat-logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.logout();
-            });
-        }
-        
-        // 绑定刷新按钮点击事件
-        const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async () => {
-                refreshBtn.disabled = true;
-                refreshBtn.textContent = '⏳';
-                
-                try {
-                    const success = await this.refreshUserData();
-                    if (success) {
-                        // 重新渲染用户信息
-                        this.renderUserInfo();
-                        console.log('用户数据已刷新');
-                    }
-                } catch (error) {
-                    console.error('刷新失败:', error);
-                } finally {
-                    refreshBtn.disabled = false;
-                    refreshBtn.textContent = '🔄';
-                }
-            });
-        }
-        
-        // 绑定按钮点击事件
+        // 绑定登录按钮点击事件
         const loginBtn = this.container.querySelector('#wechat-login-btn');
         if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('登录按钮被点击');
                 this.showLoginModal();
             });
         }
@@ -359,6 +331,44 @@ class WeChatLoginModule {
         
         // 绑定模块实例到容器
         this.container.__wechatModule = this;
+        
+        // 绑定退出按钮点击事件
+        const logoutBtn = this.container.querySelector('#wechat-logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('退出按钮被点击');
+                this.logout();
+            });
+        }
+        
+        // 绑定刷新按钮点击事件
+        const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('刷新按钮被点击');
+                
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '⏳';
+                
+                try {
+                    const success = await this.refreshUserData();
+                    if (success) {
+                        // 重新渲染用户信息
+                        this.renderUserInfo();
+                        console.log('用户数据已刷新');
+                    }
+                } catch (error) {
+                    console.error('刷新失败:', error);
+                } finally {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '🔄';
+                }
+            });
+        }
     }
 
     // 显示登录弹窗
@@ -820,16 +830,11 @@ class WeChatLoginModule {
         
         // 重新渲染界面
         if (this.container) {
-            this.render(this.container, true); // 跳过状态检查避免递归
+            this.renderLoginButton();
         }
         
         // 通知登录状态变化
         this.onLoginStatusChange(false, null);
-        
-        // 刷新页面以确保完全重置
-        setTimeout(() => {
-            window.location.reload();
-        }, 100);
         
         console.log('退出登录完成');
     }

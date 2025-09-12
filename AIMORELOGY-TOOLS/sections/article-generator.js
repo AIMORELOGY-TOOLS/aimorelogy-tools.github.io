@@ -436,11 +436,13 @@ class ArticleGeneratorModule {
         
         if (generateBtn) {
             console.log('绑定生成按钮点击事件');
-            generateBtn.addEventListener('click', (e) => {
+            generateBtn.onclick = (e) => {
                 e.preventDefault();
-                console.log('生成按钮被点击！');
+                e.stopPropagation();
+                console.log('生成按钮被点击！- onclick方式');
                 this.handleGenerate();
-            });
+                return false;
+            };
         } else {
             console.error('未找到生成按钮 (#generate-btn)');
             console.log('容器内所有按钮:', this.container.querySelectorAll('button'));
@@ -448,7 +450,13 @@ class ArticleGeneratorModule {
         
         if (copyBtn) {
             console.log('绑定复制按钮点击事件');
-            copyBtn.addEventListener('click', () => this.handleCopy());
+            copyBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('复制按钮被点击！- onclick方式');
+                this.handleCopy();
+                return false;
+            };
         }
         
         // 监听登录状态变化

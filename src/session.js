@@ -21,7 +21,7 @@ export class Session {
     }
     
     // 获取会话状态
-    if (url.pathname === '/state' && request.method === 'GET') {
+    if ((url.pathname === '/state' || url.pathname === '/status') && request.method === 'GET') {
       return this.getSessionState();
     }
     

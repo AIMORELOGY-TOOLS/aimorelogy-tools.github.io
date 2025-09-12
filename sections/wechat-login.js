@@ -187,13 +187,13 @@ class WeChatLoginModule {
                     }
                 </style>
                 
-                <img class="user-avatar" src="${user.headimgurl || '/default-avatar.png'}" alt="用户头像" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmMGYwZjAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNNiAyNmMwLTUuNTIzIDQuNDc3LTEwIDEwLTEwczEwIDQuNDc3IDEwIDEwIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPgo='">
+                <img class="user-avatar" src="${user.avatar || '/default-avatar.png'}" alt="用户头像" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmMGYwZjAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNNiAyNmMwLTUuNTIzIDQuNDc3LTEwIDEwLTEwczEwIDQuNDc3IDEwIDEwIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPgo='">
                 
                 <div class="user-details">
                     <div class="user-name">${user.nickname}</div>
                     <div>
                         <span class="user-level">${levelInfo.name}</span>
-                        <span class="user-usage">今日使用: ${user.todayUsage || 0}/${levelInfo.dailyLimit}</span>
+                        <span class="user-usage">今日使用: ${user.usage ? user.usage.daily : 0}/${levelInfo.dailyLimit === -1 ? '∞' : levelInfo.dailyLimit}</span>
                     </div>
                 </div>
                 
@@ -369,6 +369,9 @@ class WeChatLoginModule {
         
         document.body.appendChild(modal);
         
+        // 绑定模块实例到弹窗
+        modal.__wechatModule = this;
+        
         // 点击背景关闭弹窗
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -448,7 +451,7 @@ class WeChatLoginModule {
 
         this.pollTimer = setInterval(async () => {
             try {
-                const response = await fetch(`${this.config.apiBaseUrl}/poll?sessionId=${this.sessionId}`);
+                const response = await fetch(`${this.config.apiBaseUrl}/poll?id=${this.sessionId}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
@@ -456,12 +459,10 @@ class WeChatLoginModule {
 
                 const data = await response.json();
                 
-                if (data.success) {
-                    if (data.status === 'scanned') {
-                        this.showScanned();
-                    } else if (data.status === 'confirmed') {
-                        await this.handleLoginSuccess(data.userInfo);
-                    }
+                if (data.status === 'scanned') {
+                    this.showScanned();
+                } else if (data.status === 'success') {
+                    await this.handleLoginSuccess(data);
                 }
             } catch (error) {
                 console.error('轮询状态失败:', error);
@@ -491,7 +492,7 @@ class WeChatLoginModule {
     }
 
     // 处理登录成功
-    async handleLoginSuccess(userInfo) {
+    async handleLoginSuccess(pollData) {
         this.stopPolling();
         this.stopExpireTimer();
         
@@ -503,8 +504,7 @@ class WeChatLoginModule {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    sessionId: this.sessionId,
-                    userInfo: userInfo
+                    sessionId: this.sessionId
                 })
             });
 
@@ -525,7 +525,7 @@ class WeChatLoginModule {
                 this.showOverlay(`
                     <div style="color: #07c160; font-size: 24px; margin-bottom: 10px;">✅</div>
                     <div>登录成功</div>
-                    <div style="font-size: 12px; margin-top: 5px;">欢迎 ${userInfo.nickname}</div>
+                    <div style="font-size: 12px; margin-top: 5px;">欢迎 ${userData.nickname}</div>
                 `);
                 
                 // 延迟关闭弹窗并更新UI
@@ -703,7 +703,8 @@ class WeChatLoginModule {
         
         // 检查使用次数限制
         const levelInfo = this.getUserLevelInfo(this.currentUser.level);
-        if (levelInfo.dailyLimit > 0 && (this.currentUser.todayUsage || 0) >= levelInfo.dailyLimit) {
+        const dailyUsage = this.currentUser.usage ? this.currentUser.usage.daily : 0;
+        if (levelInfo.dailyLimit > 0 && dailyUsage >= levelInfo.dailyLimit) {
             return { allowed: false, reason: '今日使用次数已达上限' };
         }
         
@@ -717,14 +718,16 @@ class WeChatLoginModule {
         }
         
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/increment_usage`, {
+            const response = await fetch(`${this.config.apiBaseUrl}/update_usage`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.currentUser.token}`
                 },
                 body: JSON.stringify({
-                    featureType: featureType
+                    token: this.currentUser.token,
+                    action: featureType,
+                    amount: 1
                 })
             });
             
@@ -732,8 +735,7 @@ class WeChatLoginModule {
             
             if (data.success) {
                 // 更新本地用户信息
-                this.currentUser.todayUsage = data.todayUsage;
-                this.currentUser.monthlyUsage = data.monthlyUsage;
+                this.currentUser.usage = data.usage;
                 localStorage.setItem(this.config.storageKey, JSON.stringify(this.currentUser));
                 
                 // 更新UI显示

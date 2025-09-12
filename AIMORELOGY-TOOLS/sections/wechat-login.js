@@ -15,22 +15,9 @@ class WeChatLoginModule {
         this.pollTimer = null;
         this.expireTimer = null;
         this.currentUser = null;
+        this.isInitialized = false;
         
-        // 延迟检查登录状态，确保DOM加载完成
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.checkLoginStatus().catch(error => {
-                    console.error('检查登录状态失败:', error);
-                });
-            });
-        } else {
-            // DOM已经加载完成，立即检查
-            setTimeout(() => {
-                this.checkLoginStatus().catch(error => {
-                    console.error('检查登录状态失败:', error);
-                });
-            }, 50);
-        }
+        console.log('WeChatLoginModule构造函数被调用');
     }
 
     // 检查本地存储的登录状态
@@ -127,7 +114,7 @@ class WeChatLoginModule {
 
     // 渲染登录按钮或用户信息
     render(container, skipStatusCheck = false) {
-        console.log('render函数被调用，skipStatusCheck:', skipStatusCheck, 'currentUser:', !!this.currentUser);
+        console.log('render函数被调用，skipStatusCheck:', skipStatusCheck, 'currentUser:', !!this.currentUser, 'isInitialized:', this.isInitialized);
         
         if (!container) {
             console.error('容器元素不存在');
@@ -136,9 +123,11 @@ class WeChatLoginModule {
 
         this.container = container;
         
-        // 如果还没有检查过登录状态且不跳过检查，先检查一次
-        if (this.currentUser === null && !skipStatusCheck) {
-            console.log('currentUser为null，开始检查登录状态...');
+        // 如果是第一次渲染且还没有初始化，先检查登录状态
+        if (!this.isInitialized && !skipStatusCheck) {
+            console.log('首次渲染，开始初始化和检查登录状态...');
+            this.isInitialized = true;
+            
             this.checkLoginStatus().then(() => {
                 console.log('登录状态检查完成，重新渲染，currentUser:', !!this.currentUser);
                 // 检查完成后重新渲染，但跳过状态检查避免递归

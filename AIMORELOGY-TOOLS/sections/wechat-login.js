@@ -208,6 +208,29 @@ class WeChatLoginModule {
             });
         }
         
+        // 绑定刷新按钮点击事件
+        const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '⏳';
+                
+                try {
+                    const success = await this.refreshUserData();
+                    if (success) {
+                        // 重新渲染用户信息
+                        this.renderUserInfo();
+                        console.log('用户数据已刷新');
+                    }
+                } catch (error) {
+                    console.error('刷新失败:', error);
+                } finally {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '🔄';
+                }
+            });
+        }
+        
         // 绑定按钮点击事件
         const loginBtn = this.container.querySelector('#wechat-login-btn');
         if (loginBtn) {
@@ -276,7 +299,12 @@ class WeChatLoginModule {
                         font-size: 12px;
                     }
                     
-                    .logout-btn {
+                    .user-actions {
+                        display: flex;
+                        gap: 4px;
+                    }
+                    
+                    .logout-btn, .refresh-btn {
                         background: #f5f5f5;
                         border: none;
                         padding: 4px 8px;
@@ -287,8 +315,13 @@ class WeChatLoginModule {
                         transition: background 0.2s;
                     }
                     
-                    .logout-btn:hover {
+                    .logout-btn:hover, .refresh-btn:hover {
                         background: #e0e0e0;
+                    }
+                    
+                    .refresh-btn {
+                        padding: 4px 6px;
+                        font-size: 10px;
                     }
                     
                     @media (max-width: 768px) {
@@ -313,9 +346,14 @@ class WeChatLoginModule {
                     </div>
                 </div>
                 
-                <button class="logout-btn" id="wechat-logout-btn">
-                    退出
-                </button>
+                <div class="user-actions">
+                    <button class="refresh-btn" id="wechat-refresh-btn" title="刷新用户数据">
+                        🔄
+                    </button>
+                    <button class="logout-btn" id="wechat-logout-btn">
+                        退出
+                    </button>
+                </div>
             </div>
         `;
         
@@ -771,14 +809,60 @@ class WeChatLoginModule {
 
     // 退出登录
     logout() {
+        console.log('开始退出登录...');
+        
+        // 清除本地存储
         localStorage.removeItem(this.config.storageKey);
+        console.log('已清除本地存储数据');
+        
+        // 重置当前用户
         this.currentUser = null;
         
+        // 重新渲染界面
         if (this.container) {
             this.render(this.container, true); // 跳过状态检查避免递归
         }
         
+        // 通知登录状态变化
         this.onLoginStatusChange(false, null);
+        
+        // 刷新页面以确保完全重置
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
+        
+        console.log('退出登录完成');
+    }
+
+    // 手动刷新用户数据
+    async refreshUserData() {
+        console.log('开始刷新用户数据...');
+        
+        const stored = localStorage.getItem(this.config.storageKey);
+        if (!stored) {
+            console.log('没有本地存储数据');
+            return false;
+        }
+
+        try {
+            const userData = JSON.parse(stored);
+            if (userData.token && userData.expireTime > Date.now()) {
+                console.log('强制验证并更新用户数据...');
+                const isValid = await this.validateToken(userData.token);
+                if (isValid) {
+                    console.log('用户数据刷新成功');
+                    return true;
+                } else {
+                    console.log('Token验证失败，清除数据');
+                    this.logout();
+                    return false;
+                }
+            }
+        } catch (error) {
+            console.error('刷新用户数据失败:', error);
+        }
+        
+        return false;
     }
 
     // 获取用户等级信息

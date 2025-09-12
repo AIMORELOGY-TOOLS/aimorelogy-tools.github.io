@@ -33,6 +33,8 @@ export default {
         return await handleUpdateUsage(request, env);
       } else if (url.pathname === '/check_permission') {
         return await handleCheckPermission(request, env);
+      } else if (url.pathname === '/test_create_user') {
+        return await handleTestCreateUser(request, env);
       } else if (url.pathname === '/ws') {
         return await handleWsUpgrade(request, env);
       } else if (url.pathname === '/') {
@@ -308,8 +310,11 @@ async function handleFinalizeLogin(request, env) {
     const data = await response.json();
     
     if ((data.status === 'scanned' || data.status === 'success') && data.openid) {
+      console.log('开始处理登录完成，openid:', data.openid);
+      
       // 获取或创建用户信息
       const userInfo = await getOrCreateUser(env, data.openid);
+      console.log('用户信息创建/获取完成:', userInfo);
       
       // 生成登录 token
       const token = generateLoginToken(data.openid);
@@ -317,6 +322,7 @@ async function handleFinalizeLogin(request, env) {
       
       // 更新最后登录时间
       await updateUserLastLogin(env, data.openid, loginTime);
+      console.log('登录完成处理结束');
       
       return new Response(JSON.stringify({
         success: true,
@@ -771,6 +777,73 @@ async function handleUpdateUsage(request, env) {
     return new Response(JSON.stringify({
       error: '更新使用次数失败',
       message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 测试用户创建
+async function handleTestCreateUser(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const testOpenid = 'test_user_' + Date.now();
+    console.log('测试创建用户，openid:', testOpenid);
+    
+    // 检查KV绑定是否存在
+    console.log('检查KV绑定:', typeof env.WECHAT_KV);
+    
+    // 直接测试KV写入
+    const testKey = `test:${Date.now()}`;
+    const testValue = JSON.stringify({ test: true, timestamp: Date.now() });
+    
+    console.log('尝试直接写入KV，key:', testKey);
+    await env.WECHAT_KV.put(testKey, testValue);
+    console.log('KV写入完成');
+    
+    // 立即读取验证
+    const readBack = await env.WECHAT_KV.get(testKey);
+    console.log('KV读取结果:', readBack);
+    
+    // 现在测试用户创建
+    const userInfo = await getOrCreateUser(env, testOpenid);
+    console.log('测试用户创建完成:', userInfo);
+    
+    // 验证用户是否真的保存了
+    const savedUser = await env.WECHAT_KV.get(`user:${testOpenid}`);
+    console.log('验证保存的用户数据:', savedUser);
+    
+    // 列出所有键
+    const allKeys = await env.WECHAT_KV.list();
+    console.log('KV中所有键:', allKeys);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      testOpenid: testOpenid,
+      userInfo: userInfo,
+      savedData: savedUser ? JSON.parse(savedUser) : null,
+      kvTest: {
+        testKey: testKey,
+        testValue: testValue,
+        readBack: readBack
+      },
+      allKeys: allKeys
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+    
+  } catch (error) {
+    console.error('测试用户创建失败:', error);
+    return new Response(JSON.stringify({
+      error: '测试用户创建失败',
+      message: error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }

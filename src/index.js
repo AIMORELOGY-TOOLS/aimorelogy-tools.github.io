@@ -51,6 +51,10 @@ export default {
         return await handleAdminClearAllUsers(request, env);
       } else if (url.pathname === '/validate_token') {
         return await handleValidateToken(request, env);
+      } else if (url.pathname === '/update_article_usage') {
+        return await handleUpdateArticleUsage(request, env);
+      } else if (url.pathname === '/get_article_usage') {
+        return await handleGetArticleUsage(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -166,6 +170,284 @@ async function handleWechatEvent(request, env, ctx) {
       headers: { 
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'no-cache'
+      }
+    });
+  }
+}
+
+// 更新文章生成使用次数
+async function handleUpdateArticleUsage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '仅支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { token, action, amount = 1 } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 解析token获取openid
+    const tokenParts = token.split(':');
+    if (tokenParts.length !== 3) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'token格式无效'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const openid = tokenParts[0];
+    
+    // 从KV存储中获取用户数据
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    
+    if (!userData) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户不存在'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const user = JSON.parse(userData);
+    
+    // 检查token是否匹配
+    if (user.token !== token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'token无效'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 初始化文章使用统计
+    if (!user.articleUsage) {
+      user.articleUsage = {
+        daily: 0,
+        total: 0,
+        lastResetDate: new Date().toDateString()
+      };
+    }
+
+    // 检查是否需要重置每日计数
+    const today = new Date().toDateString();
+    if (user.articleUsage.lastResetDate !== today) {
+      user.articleUsage.daily = 0;
+      user.articleUsage.lastResetDate = today;
+    }
+
+    // 更新使用次数
+    if (action === 'article_generation') {
+      user.articleUsage.daily += amount;
+      user.articleUsage.total += amount;
+    }
+
+    // 更新用户数据
+    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+
+    return new Response(JSON.stringify({
+      success: true,
+      usage: user.articleUsage,
+      message: '使用次数更新成功'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('更新文章使用次数失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 获取文章生成使用次数
+async function handleGetArticleUsage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '仅支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { token } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 解析token获取openid
+    const tokenParts = token.split(':');
+    if (tokenParts.length !== 3) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'token格式无效'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const openid = tokenParts[0];
+    
+    // 从KV存储中获取用户数据
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    
+    if (!userData) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户不存在'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const user = JSON.parse(userData);
+    
+    // 检查token是否匹配
+    if (user.token !== token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'token无效'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 初始化文章使用统计
+    if (!user.articleUsage) {
+      user.articleUsage = {
+        daily: 0,
+        total: 0,
+        lastResetDate: new Date().toDateString()
+      };
+    }
+
+    // 检查是否需要重置每日计数
+    const today = new Date().toDateString();
+    if (user.articleUsage.lastResetDate !== today) {
+      user.articleUsage.daily = 0;
+      user.articleUsage.lastResetDate = today;
+      
+      // 更新用户数据
+      await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      usage: user.articleUsage,
+      userLevel: user.level || 'normal'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('获取文章使用次数失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
       }
     });
   }

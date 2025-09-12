@@ -318,15 +318,15 @@
             
             <div class="modules-grid">
                 <!-- AI 文章生成模块 -->
-                <div class="module-card">
+                <div class="module-card" data-module="article-generator">
                     <span class="module-icon">📝</span>
-                    <h3 class="module-title">AI 文章生成</h3>
+                    <h3 class="module-title">公众号爆文生成</h3>
                     <p class="module-description">
-                        基于 DeepSeek 大模型，智能生成高质量文章内容。支持多种文体风格，满足不同创作需求。
+                        基于 DeepSeek 大模型，智能生成高质量公众号文章内容。支持自定义主题、参考文章和字数限制。
                     </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
+                    <span class="module-status status-available">现已上线</span>
+                    <button class="module-button btn-primary" onclick="openArticleGenerator()">
+                        立即使用
                     </button>
                 </div>
 
@@ -400,6 +400,8 @@
 
     <!-- 引入微信登录模块 -->
     <script src="sections/wechat-login.js"></script>
+    <!-- 引入文章生成模块 -->
+    <script src="sections/article-generator.js"></script>
     
     <script>
         // 初始化微信登录模块
@@ -489,6 +491,17 @@
             }).catch(error => {
                 console.error('更新使用次数失败:', error);
             });
+        }
+
+        // 打开文章生成器
+        function openArticleGenerator() {
+            if (!wechatLogin.getCurrentUser()) {
+                alert('请先登录后使用此功能');
+                return;
+            }
+            
+            // 创建文章生成器页面
+            window.location.href = 'article-generator.html';
         }
 
         // 全局函数，供其他模块调用

@@ -97,7 +97,7 @@ class WeChatLoginModule {
                     }
                 </style>
                 
-                <button class="login-btn" onclick="this.parentElement.__wechatModule.showLoginModal()">
+                <button class="login-btn" id="wechat-login-btn">
                     <span class="wechat-icon">💬</span>
                     <span>微信登录</span>
                 </button>
@@ -106,6 +106,22 @@ class WeChatLoginModule {
         
         // 绑定模块实例到容器
         this.container.__wechatModule = this;
+        
+        // 绑定退出按钮点击事件
+        const logoutBtn = this.container.querySelector('#wechat-logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
+        
+        // 绑定按钮点击事件
+        const loginBtn = this.container.querySelector('#wechat-login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                this.showLoginModal();
+            });
+        }
     }
 
     // 渲染用户信息
@@ -197,7 +213,7 @@ class WeChatLoginModule {
                     </div>
                 </div>
                 
-                <button class="logout-btn" onclick="this.parentElement.__wechatModule.logout()">
+                <button class="logout-btn" id="wechat-logout-btn">
                     退出
                 </button>
             </div>
@@ -344,7 +360,7 @@ class WeChatLoginModule {
             </style>
             
             <div class="modal-content">
-                <button class="close-btn" onclick="this.closest('.wechat-login-modal').remove()">&times;</button>
+                <button class="close-btn" id="modal-close-btn">&times;</button>
                 
                 <h3 class="modal-title">微信扫码登录</h3>
                 
@@ -376,6 +392,21 @@ class WeChatLoginModule {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 this.closeModal();
+            }
+        });
+        
+        // 绑定弹窗内按钮事件
+        const closeBtn = modal.querySelector('#modal-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.closeModal();
+            });
+        }
+        
+        // 使用事件委托处理刷新按钮
+        modal.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action="refresh"]')) {
+                this.refresh();
             }
         });
         
@@ -550,7 +581,7 @@ class WeChatLoginModule {
         this.showOverlay(`
             <div style="color: #fa5151; font-size: 24px; margin-bottom: 10px;">⏰</div>
             <div>二维码已过期</div>
-            <button class="refresh-btn" onclick="document.querySelector('.wechat-login-modal').__wechatModule.refresh()">
+            <button class="refresh-btn" data-action="refresh">
                 刷新二维码
             </button>
         `);
@@ -582,7 +613,7 @@ class WeChatLoginModule {
         this.showOverlay(`
             <div style="color: #fa5151; font-size: 24px; margin-bottom: 10px;">❌</div>
             <div>${message}</div>
-            <button class="refresh-btn" onclick="document.querySelector('.wechat-login-modal').__wechatModule.refresh()">
+            <button class="refresh-btn" data-action="refresh">
                 重新生成
             </button>
         `);

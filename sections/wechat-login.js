@@ -35,27 +35,45 @@ class WeChatLoginModule {
 
     // 检查本地存储的登录状态
     async checkLoginStatus() {
+        console.log('开始检查登录状态...');
         const stored = localStorage.getItem(this.config.storageKey);
+        console.log('本地存储数据:', stored);
+        
         if (stored) {
             try {
                 const userData = JSON.parse(stored);
+                console.log('解析的用户数据:', userData);
+                
                 // 检查 token 是否过期
                 if (userData.token && userData.expireTime > Date.now()) {
+                    console.log('Token未过期，验证服务器端有效性...');
                     // 验证服务器端token有效性
                     const isValid = await this.validateToken(userData.token);
+                    console.log('服务器端验证结果:', isValid);
+                    
                     if (isValid) {
                         this.currentUser = userData;
+                        console.log('登录状态恢复成功:', userData);
                         this.onLoginStatusChange(true, userData);
                         return true;
+                    } else {
+                        console.log('服务器端验证失败，清除本地数据');
                     }
+                } else {
+                    console.log('Token已过期，清除本地数据');
                 }
             } catch (error) {
                 console.error('解析用户数据失败:', error);
             }
+        } else {
+            console.log('本地无存储数据');
         }
         
         // 清除过期或无效数据，但不触发render避免递归
-        localStorage.removeItem(this.config.storageKey);
+        if (stored) {
+            localStorage.removeItem(this.config.storageKey);
+            console.log('已清除本地存储数据');
+        }
         this.currentUser = null;
         return false;
     }
@@ -267,7 +285,6 @@ class WeChatLoginModule {
                     <div class="user-id">用户ID: ${user.userid || user.openid}</div>
                     <div>
                         <span class="user-level">${levelInfo.name}</span>
-                        <span class="user-usage">今日使用: ${user.usage ? user.usage.daily : 0}/${levelInfo.dailyLimit === -1 ? '∞' : levelInfo.dailyLimit}</span>
                     </div>
                 </div>
                 

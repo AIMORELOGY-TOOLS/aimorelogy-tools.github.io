@@ -126,9 +126,9 @@ export class Session {
       console.log('Received scan notification:', data);
       
       if (data.type === 'scan' && data.openid && data.sessionId) {
-        // 更新会话数据
+        // 更新会话数据 - 直接设置为成功状态
         this.sessionData = {
-          status: 'scanned',
+          status: 'success',
           openid: data.openid,
           sessionId: data.sessionId,
           timestamp: data.timestamp || Date.now()
@@ -139,7 +139,7 @@ export class Session {
         
         // 广播给所有连接的客户端
         this.broadcastToWebSockets({
-          type: 'scanned',
+          type: 'success',
           data: this.sessionData
         });
         

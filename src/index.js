@@ -477,6 +477,8 @@ async function handleValidateToken(request, env) {
 
     const body = await request.json();
     const { token } = body;
+    
+    console.log('收到token验证请求:', token);
 
     if (!token) {
       return new Response(JSON.stringify({
@@ -493,7 +495,10 @@ async function handleValidateToken(request, env) {
 
     // 解析token获取openid
     const tokenParts = token.split(':');
+    console.log('Token分割结果:', tokenParts);
+    
     if (tokenParts.length !== 3) {
+      console.log('Token格式无效，长度:', tokenParts.length);
       return new Response(JSON.stringify({
         success: false,
         valid: false,
@@ -507,11 +512,14 @@ async function handleValidateToken(request, env) {
     }
 
     const openid = tokenParts[0];
+    console.log('解析出的openid:', openid);
     
     // 从KV存储中获取用户数据
     const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    console.log('从KV获取的用户数据:', userData ? '存在' : '不存在');
     
     if (!userData) {
+      console.log('用户不存在，openid:', openid);
       return new Response(JSON.stringify({
         success: true,
         valid: false,
@@ -525,9 +533,22 @@ async function handleValidateToken(request, env) {
     }
 
     const user = JSON.parse(userData);
+    console.log('解析的用户数据:', {
+      openid: user.openid,
+      hasToken: !!user.token,
+      tokenLength: user.token ? user.token.length : 0,
+      expireTime: user.expireTime
+    });
     
     // 检查token是否匹配
+    console.log('Token比较:', {
+      received: token,
+      stored: user.token,
+      match: user.token === token
+    });
+    
     if (user.token !== token) {
+      console.log('Token不匹配');
       return new Response(JSON.stringify({
         success: true,
         valid: false,

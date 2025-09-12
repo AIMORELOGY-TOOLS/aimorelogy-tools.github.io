@@ -81,6 +81,7 @@ class WeChatLoginModule {
     // 验证token有效性
     async validateToken(token) {
         try {
+            console.log('验证token:', token);
             const response = await fetch(`${this.config.apiBaseUrl}/validate_token`, {
                 method: 'POST',
                 headers: {
@@ -90,7 +91,9 @@ class WeChatLoginModule {
                 body: JSON.stringify({ token })
             });
             
+            console.log('验证响应状态:', response.status);
             const data = await response.json();
+            console.log('验证响应数据:', data);
             return data.success && data.valid;
         } catch (error) {
             console.error('验证token失败:', error);

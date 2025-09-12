@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录组件</title>
+    <style>
+        .wechat-login-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .wechat-login-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .wechat-logo {
+            width: 60px;
+            height: 60px;
+            background: #07c160;
+            border-radius: 12px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .wechat-title {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .wechat-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .qr-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #07c160;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-text {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .status-success {
+            color: #07c160;
+        }
+        
+        .status-error {
+            color: #ff4757;
+        }
+        
+        .refresh-btn {
+            background: #07c160;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: #06ad56;
+        }
+        
+        .login-steps {
+            text-align: left;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .login-steps ol {
+            margin-left: 20px;
+        }
+        
+        .login-steps li {
+            margin-bottom: 5px;
+        }
+
+        /* 登录按钮样式 */
+        .wechat-login-btn {
+            background: #07c160;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .wechat-login-btn:hover {
+            background: #06ad56;
+            transform: translateY(-1px);
+        }
+        
+        .wechat-login-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- 微信登录按钮 -->
+    <button class="wechat-login-btn" onclick="openWechatLogin()">
+        <span>微</span>
+        微信登录
+    </button>
+
+    <!-- 微信登录弹窗 -->
+    <div id="wechatLoginModal" class="wechat-login-modal">
+        <div class="wechat-login-content">
+            <button class="close-btn" onclick="closeWechatLogin()">&times;</button>
+            
+            <div class="wechat-logo">微</div>
+            <h2 class="wechat-title">微信登录</h2>
+            <p class="wechat-subtitle">使用微信扫码快速登录</p>
+            
+            <div class="qr-container">
+                <div class="loading-spinner" id="loadingSpinner"></div>
+                <img class="qr-code" id="qrcodeImage" style="display: none;" />
+                <div class="status-text" id="statusText">正在生成二维码...</div>
+                <button class="refresh-btn" id="refreshButton" style="display: none;" onclick="generateQRCode()">
+                    刷新二维码
+                </button>
+            </div>
+            
+            <div class="login-steps">
+                <strong>登录步骤：</strong>
+                <ol>
+                    <li>使用微信扫描上方二维码</li>
+                    <li>关注微信服务号（如未关注）</li>
+                    <li>等待自动登录完成</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置后端 API 地址
+        const API_BASE_URL = 'https://wechat-login-worker.你的域名.workers.dev';
+        
+        let currentSessionId = null;
+        let pollInterval = null;
+        let wsConnection = null;
+
+        // 打开微信登录弹窗
+        function openWechatLogin() {
+            document.getElementById('wechatLoginModal').style.display = 'block';
+            generateQRCode();
+        }
+
+        // 关闭微信登录弹窗
+        function closeWechatLogin() {
+            document.getElementById('wechatLoginModal').style.display = 'none';
+            cleanup();
+        }
+
+        // 清理资源
+        function cleanup() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            if (wsConnection) {
+                wsConnection.close();
+                wsConnection = null;
+            }
+            currentSessionId = null;
+        }
+
+        // 生成二维码
+        async function generateQRCode() {
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const qrcodeImage = document.getElementById('qrcodeImage');
+            const statusText = document.getElementById('statusText');
+            const refreshButton = document.getElementById('refreshButton');
+            
+            // 重置状态
+            loadingSpinner.style.display = 'block';
+            qrcodeImage.style.display = 'none';
+            refreshButton.style.display = 'none';
+            statusText.textContent = '正在生成二维码...';
+            statusText.className = 'status-text';
+            
+            cleanup();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/create_qr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentSessionId = data.sessionId;
+                    qrcodeImage.src = data.qrcodeUrl;
+                    qrcodeImage.style.display = 'block';
+                    loadingSpinner.style.display = 'none';
+                    statusText.textContent = '请使用微信扫描二维码';
+                    
+                    // 开始监听扫码状态
+                    startPolling();
+                } else {
+                    throw new Error(data.error || '生成二维码失败');
+                }
+            } catch (error) {
+                console.error('生成二维码失败:', error);
+                loadingSpinner.style.display = 'none';
+                statusText.textContent = '生成二维码失败: ' + error.message;
+                statusText.className = 'status-text status-error';
+                refreshButton.style.display = 'inline-block';
+            }
+        }
+
+        // 开始轮询状态
+        function startPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+            
+            pollInterval = setInterval(async () => {
+                if (!currentSessionId) return;
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/poll?id=${currentSessionId}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'scanned') {
+                        handleLoginSuccess(data);
+                    }
+                } catch (error) {
+                    console.error('轮询状态失败:', error);
+                }
+            }, 2000); // 每2秒轮询一次
+        }
+
+        // 处理登录成功
+        async function handleLoginSuccess(data) {
+            const statusText = document.getElementById('statusText');
+            
+            cleanup();
+            
+            statusText.textContent = '扫码成功，正在登录...';
+            statusText.className = 'status-text status-success';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/finalize_login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusText.textContent = '登录成功！';
+                    
+                    // 存储登录信息
+                    localStorage.setItem('wechat_login_token', result.token);
+                    localStorage.setItem('wechat_openid', result.openid);
+                    localStorage.setItem('wechat_login_time', result.loginTime);
+                    
+                    // 触发登录成功事件
+                    const loginEvent = new CustomEvent('wechatLoginSuccess', {
+                        detail: {
+                            token: result.token,
+                            openid: result.openid,
+                            loginTime: result.loginTime
+                        }
+                    });
+                    window.dispatchEvent(loginEvent);
+                    
+                    // 2秒后关闭弹窗
+                    setTimeout(() => {
+                        closeWechatLogin();
+                    }, 2000);
+                    
+                } else {
+                    throw new Error(result.error || '登录失败');
+                }
+            } catch (error) {
+                console.error('完成登录失败:', error);
+                statusText.textContent = '登录失败: ' + error.message;
+                statusText.className = 'status-text status-error';
+                document.getElementById('refreshButton').style.display = 'inline-block';
+            }
+        }
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            const token = localStorage.getItem('wechat_login_token');
+            const openid = localStorage.getItem('wechat_openid');
+            const loginTime = localStorage.getItem('wechat_login_time');
+            
+            if (token && openid && loginTime) {
+                // 检查登录是否过期（24小时）
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+                
+                if (hoursDiff < 24) {
+                    return {
+                        isLoggedIn: true,
+                        token: token,
+                        openid: openid,
+                        loginTime: loginTime
+                    };
+                } else {
+                    // 登录过期，清除数据
+                    logout();
+                }
+            }
+            
+            return {
+                isLoggedIn: false
+            };
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('wechat_login_token');
+            localStorage.removeItem('wechat_openid');
+            localStorage.removeItem('wechat_login_time');
+            
+            // 触发退出登录事件
+            const logoutEvent = new CustomEvent('wechatLogout');
+            window.dispatchEvent(logoutEvent);
+        }
+
+        // 点击弹窗外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('wechatLoginModal');
+            if (event.target === modal) {
+                closeWechatLogin();
+            }
+        }
+
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', cleanup);
+
+        // 暴露全局方法
+        window.WechatLogin = {
+            open: openWechatLogin,
+            close: closeWechatLogin,
+            checkStatus: checkLoginStatus,
+            logout: logout
+        };
+    </script>
+</body>
+</html>

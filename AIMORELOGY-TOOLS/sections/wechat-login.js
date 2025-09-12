@@ -54,7 +54,9 @@ class WeChatLoginModule {
                     if (isValid) {
                         this.currentUser = userData;
                         console.log('登录状态恢复成功:', userData);
+                        console.log('设置currentUser后，准备触发onLoginStatusChange');
                         this.onLoginStatusChange(true, userData);
+                        console.log('onLoginStatusChange已调用');
                         return true;
                     } else {
                         console.log('服务器端验证失败，清除本地数据');
@@ -125,6 +127,8 @@ class WeChatLoginModule {
 
     // 渲染登录按钮或用户信息
     render(container, skipStatusCheck = false) {
+        console.log('render函数被调用，skipStatusCheck:', skipStatusCheck, 'currentUser:', !!this.currentUser);
+        
         if (!container) {
             console.error('容器元素不存在');
             return;
@@ -134,7 +138,9 @@ class WeChatLoginModule {
         
         // 如果还没有检查过登录状态且不跳过检查，先检查一次
         if (this.currentUser === null && !skipStatusCheck) {
+            console.log('currentUser为null，开始检查登录状态...');
             this.checkLoginStatus().then(() => {
+                console.log('登录状态检查完成，重新渲染，currentUser:', !!this.currentUser);
                 // 检查完成后重新渲染，但跳过状态检查避免递归
                 this.render(container, true);
             }).catch(error => {
@@ -144,9 +150,12 @@ class WeChatLoginModule {
             return;
         }
         
+        console.log('准备渲染界面，currentUser存在:', !!this.currentUser);
         if (this.currentUser) {
+            console.log('调用renderUserInfo');
             this.renderUserInfo();
         } else {
+            console.log('调用renderLoginButton');
             this.renderLoginButton();
         }
     }
@@ -1019,13 +1028,22 @@ class WeChatLoginModule {
 
     // 登录状态变化回调 - 可被外部重写
     onLoginStatusChange(isLoggedIn, userData) {
+        console.log('登录状态变化:', isLoggedIn ? '已登录' : '未登录', userData);
+        console.log('当前容器存在:', !!this.container);
+        
+        // 如果已登录且有容器，确保渲染用户信息
+        if (isLoggedIn && this.container && this.currentUser) {
+            console.log('强制重新渲染用户信息');
+            setTimeout(() => {
+                this.renderUserInfo();
+            }, 50);
+        }
+        
         // 触发自定义事件
         const event = new CustomEvent('wechatLoginStatusChange', {
             detail: { isLoggedIn, userData }
         });
         document.dispatchEvent(event);
-        
-        console.log('登录状态变化:', isLoggedIn ? '已登录' : '未登录', userData);
     }
 }
 

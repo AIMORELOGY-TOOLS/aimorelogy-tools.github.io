@@ -54,8 +54,9 @@ class WeChatLoginModule {
             }
         }
         
-        // 清除过期或无效数据
-        this.logout();
+        // 清除过期或无效数据，但不触发render避免递归
+        localStorage.removeItem(this.config.storageKey);
+        this.currentUser = null;
         return false;
     }
 
@@ -80,7 +81,7 @@ class WeChatLoginModule {
     }
 
     // 渲染登录按钮或用户信息
-    render(container) {
+    render(container, skipStatusCheck = false) {
         if (!container) {
             console.error('容器元素不存在');
             return;
@@ -88,15 +89,11 @@ class WeChatLoginModule {
 
         this.container = container;
         
-        // 如果还没有检查过登录状态，先检查一次
-        if (this.currentUser === null) {
+        // 如果还没有检查过登录状态且不跳过检查，先检查一次
+        if (this.currentUser === null && !skipStatusCheck) {
             this.checkLoginStatus().then(() => {
-                // 检查完成后重新渲染
-                if (this.currentUser) {
-                    this.renderUserInfo();
-                } else {
-                    this.renderLoginButton();
-                }
+                // 检查完成后重新渲染，但跳过状态检查避免递归
+                this.render(container, true);
             }).catch(error => {
                 console.error('检查登录状态失败:', error);
                 this.renderLoginButton();
@@ -736,7 +733,7 @@ class WeChatLoginModule {
         this.currentUser = null;
         
         if (this.container) {
-            this.render(this.container);
+            this.render(this.container, true); // 跳过状态检查避免递归
         }
         
         this.onLoginStatusChange(false, null);

@@ -453,21 +453,32 @@
                 const status = card.querySelector('.module-status');
                 
                 if (userData) {
-                    // 用户已登录，可以启用某些模块
-                    // 这里可以根据用户等级来决定哪些模块可用
-                    const levelInfo = wechatLogin.getUserLevelInfo(userData.level);
+                    // 用户已登录，启用文章生成模块
+                    const moduleType = card.getAttribute('data-module');
                     
-                    // 示例：根据用户等级启用不同模块
-                    if (userData.level === 'admin') {
-                        // 管理员可以访问所有模块
+                    if (moduleType === 'article-generator') {
+                        // 文章生成模块对所有登录用户开放
                         button.textContent = '立即使用';
                         button.className = 'module-button btn-primary';
                         button.disabled = false;
-                        status.textContent = '可用';
+                        status.textContent = '现已上线';
                         status.className = 'module-status status-available';
                     } else {
-                        // 其他用户暂时还是显示即将上线
-                        // 后续开发具体功能时再修改
+                        // 其他模块根据用户等级决定
+                        if (userData.level === 'admin') {
+                            button.textContent = '立即使用';
+                            button.className = 'module-button btn-primary';
+                            button.disabled = false;
+                            status.textContent = '可用';
+                            status.className = 'module-status status-available';
+                        } else {
+                            // 其他用户暂时还是显示即将上线
+                            button.textContent = '敬请期待';
+                            button.className = 'module-button btn-disabled';
+                            button.disabled = true;
+                            status.textContent = '即将上线';
+                            status.className = 'module-status status-coming-soon';
+                        }
                     }
                 } else {
                     // 用户未登录，所有模块都不可用

@@ -214,6 +214,7 @@ class WeChatLoginModule {
 
     // 渲染用户信息
     renderUserInfo() {
+        console.log('开始渲染用户信息...');
         const user = this.currentUser;
         const levelInfo = this.getUserLevelInfo(user.level);
         
@@ -332,43 +333,60 @@ class WeChatLoginModule {
         // 绑定模块实例到容器
         this.container.__wechatModule = this;
         
-        // 绑定退出按钮点击事件
-        const logoutBtn = this.container.querySelector('#wechat-logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('退出按钮被点击');
-                this.logout();
-            });
-        }
-        
-        // 绑定刷新按钮点击事件
-        const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('刷新按钮被点击');
+        // 使用setTimeout确保DOM完全渲染后再绑定事件
+        setTimeout(() => {
+            console.log('开始绑定用户信息按钮事件...');
+            
+            // 绑定退出按钮点击事件
+            const logoutBtn = this.container.querySelector('#wechat-logout-btn');
+            console.log('找到退出按钮:', !!logoutBtn);
+            if (logoutBtn) {
+                // 移除可能存在的旧事件监听器
+                logoutBtn.replaceWith(logoutBtn.cloneNode(true));
+                const newLogoutBtn = this.container.querySelector('#wechat-logout-btn');
                 
-                refreshBtn.disabled = true;
-                refreshBtn.textContent = '⏳';
+                newLogoutBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('退出按钮被点击');
+                    this.logout();
+                });
+                console.log('退出按钮事件已绑定');
+            }
+            
+            // 绑定刷新按钮点击事件
+            const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
+            console.log('找到刷新按钮:', !!refreshBtn);
+            if (refreshBtn) {
+                // 移除可能存在的旧事件监听器
+                refreshBtn.replaceWith(refreshBtn.cloneNode(true));
+                const newRefreshBtn = this.container.querySelector('#wechat-refresh-btn');
                 
-                try {
-                    const success = await this.refreshUserData();
-                    if (success) {
-                        // 重新渲染用户信息
-                        this.renderUserInfo();
-                        console.log('用户数据已刷新');
+                newRefreshBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('刷新按钮被点击');
+                    
+                    newRefreshBtn.disabled = true;
+                    newRefreshBtn.textContent = '⏳';
+                    
+                    try {
+                        const success = await this.refreshUserData();
+                        if (success) {
+                            // 重新渲染用户信息
+                            this.renderUserInfo();
+                            console.log('用户数据已刷新');
+                        }
+                    } catch (error) {
+                        console.error('刷新失败:', error);
+                    } finally {
+                        newRefreshBtn.disabled = false;
+                        newRefreshBtn.textContent = '🔄';
                     }
-                } catch (error) {
-                    console.error('刷新失败:', error);
-                } finally {
-                    refreshBtn.disabled = false;
-                    refreshBtn.textContent = '🔄';
-                }
-            });
-        }
+                });
+                console.log('刷新按钮事件已绑定');
+            }
+        }, 100);
     }
 
     // 显示登录弹窗

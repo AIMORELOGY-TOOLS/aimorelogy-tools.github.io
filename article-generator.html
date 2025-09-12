@@ -205,11 +205,17 @@
                 console.log('用户使用次数已更新:', usage);
             });
             
-            // 检查当前登录状态
-            const currentUser = wechatLogin.getCurrentUser();
-            if (currentUser) {
-                articleGenerator.setCurrentUser(currentUser);
-            }
+            // 检查当前登录状态 - 延迟执行确保登录状态检查完成
+            setTimeout(() => {
+                const currentUser = wechatLogin.getCurrentUser();
+                if (currentUser) {
+                    console.log('文章生成器页面发现已登录用户:', currentUser);
+                    articleGenerator.setCurrentUser(currentUser);
+                    articleGenerator.render(generatorContainer);
+                } else {
+                    console.log('文章生成器页面：用户未登录');
+                }
+            }, 100);
         });
 
         // 全局函数，供其他模块调用

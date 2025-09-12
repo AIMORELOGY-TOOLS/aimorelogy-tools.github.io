@@ -16,10 +16,21 @@ class WeChatLoginModule {
         this.expireTimer = null;
         this.currentUser = null;
         
-        // 初始化时检查登录状态
-        this.checkLoginStatus().catch(error => {
-            console.error('检查登录状态失败:', error);
-        });
+        // 延迟检查登录状态，确保DOM加载完成
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.checkLoginStatus().catch(error => {
+                    console.error('检查登录状态失败:', error);
+                });
+            });
+        } else {
+            // DOM已经加载完成，立即检查
+            setTimeout(() => {
+                this.checkLoginStatus().catch(error => {
+                    console.error('检查登录状态失败:', error);
+                });
+            }, 50);
+        }
     }
 
     // 检查本地存储的登录状态
@@ -76,6 +87,22 @@ class WeChatLoginModule {
         }
 
         this.container = container;
+        
+        // 如果还没有检查过登录状态，先检查一次
+        if (this.currentUser === null) {
+            this.checkLoginStatus().then(() => {
+                // 检查完成后重新渲染
+                if (this.currentUser) {
+                    this.renderUserInfo();
+                } else {
+                    this.renderLoginButton();
+                }
+            }).catch(error => {
+                console.error('检查登录状态失败:', error);
+                this.renderLoginButton();
+            });
+            return;
+        }
         
         if (this.currentUser) {
             this.renderUserInfo();

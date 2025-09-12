@@ -431,6 +431,17 @@
                     updateModulesAccess(null);
                 }
             });
+            
+            // 检查初始登录状态并更新UI
+            setTimeout(() => {
+                const currentUser = wechatLogin.getCurrentUser();
+                if (currentUser) {
+                    console.log('页面加载时发现已登录用户:', currentUser);
+                    updateModulesAccess(currentUser);
+                } else {
+                    updateModulesAccess(null);
+                }
+            }, 100);
         });
 
         // 更新模块访问权限

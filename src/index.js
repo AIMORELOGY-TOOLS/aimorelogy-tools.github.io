@@ -307,7 +307,7 @@ async function handleFinalizeLogin(request, env) {
     const response = await sessionObj.fetch('https://internal/status');
     const data = await response.json();
     
-    if (data.status === 'scanned' && data.openid) {
+    if ((data.status === 'scanned' || data.status === 'success') && data.openid) {
       // 获取或创建用户信息
       const userInfo = await getOrCreateUser(env, data.openid);
       

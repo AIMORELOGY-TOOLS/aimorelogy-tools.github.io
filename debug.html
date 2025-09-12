@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录调试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .info { background-color: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 微信登录调试页面</h1>
+    
+    <div class="debug-section info">
+        <h3>测试步骤</h3>
+        <p>1. 点击下面的按钮测试各个 API 接口</p>
+        <p>2. 查看控制台输出和响应结果</p>
+        <p>3. 如果有错误，会显示详细的错误信息</p>
+    </div>
+
+    <div class="debug-section">
+        <h3>API 测试</h3>
+        <button onclick="testCreateQR()">测试创建二维码</button>
+        <button onclick="testCORS()">测试 CORS</button>
+        <button onclick="testFullLogin()">完整登录测试</button>
+        <button onclick="clearResults()">清空结果</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>测试结果</h3>
+        <div id="results"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>微信登录组件测试</h3>
+        <div id="wechat-login-test"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://aimorelogybackend.site';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong><br>
+                ${typeof message === 'object' ? '<pre>' + JSON.stringify(message, null, 2) + '</pre>' : message}
+            `;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testCreateQR() {
+            log('开始测试创建二维码 API...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/create_qr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                log(`HTTP 状态: ${response.status} ${response.statusText}`, 'info');
+                log(`响应头: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`, 'info');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log('✅ 创建二维码成功', 'success');
+                log(data, 'success');
+
+                if (data.success && data.qrUrl) {
+                    // 显示二维码
+                    const img = document.createElement('img');
+                    img.src = data.qrUrl;
+                    img.style.width = '200px';
+                    img.style.height = '200px';
+                    img.style.border = '1px solid #ddd';
+                    
+                    const qrDiv = document.createElement('div');
+                    qrDiv.className = 'debug-section success';
+                    qrDiv.innerHTML = '<h4>生成的二维码:</h4>';
+                    qrDiv.appendChild(img);
+                    
+                    document.getElementById('results').appendChild(qrDiv);
+                }
+
+            } catch (error) {
+                log(`❌ 创建二维码失败: ${error.message}`, 'error');
+                log(error, 'error');
+            }
+        }
+
+        async function testCORS() {
+            log('开始测试 CORS 配置...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/create_qr`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+
+                log(`CORS 预检请求状态: ${response.status}`, 'info');
+                log(`CORS 响应头:`, 'info');
+                
+                const corsHeaders = {};
+                response.headers.forEach((value, key) => {
+                    if (key.toLowerCase().startsWith('access-control')) {
+                        corsHeaders[key] = value;
+                    }
+                });
+                
+                log(corsHeaders, 'info');
+
+                if (response.status === 200 || response.status === 204) {
+                    log('✅ CORS 配置正常', 'success');
+                } else {
+                    log('⚠️ CORS 配置可能有问题', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ CORS 测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFullLogin() {
+            log('开始完整登录流程测试...', 'info');
+            
+            // 清空之前的组件
+            const container = document.getElementById('wechat-login-test');
+            container.innerHTML = '';
+            
+            // 配置登录组件
+            window.WECHAT_LOGIN_CONFIG = {
+                apiBaseUrl: API_BASE_URL,
+                onLoginSuccess: function(userInfo, token) {
+                    log('🎉 登录成功!', 'success');
+                    log({ userInfo, token }, 'success');
+                },
+                onLoginError: function(error) {
+                    log('❌ 登录失败', 'error');
+                    log(error, 'error');
+                },
+                onQRExpired: function() {
+                    log('⏰ 二维码已过期', 'info');
+                }
+            };
+
+            // 加载微信登录组件
+            if (window.WeChatLogin) {
+                new window.WeChatLogin(container, window.WECHAT_LOGIN_CONFIG);
+                log('✅ 微信登录组件已初始化', 'success');
+            } else {
+                log('❌ 微信登录组件未加载', 'error');
+            }
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 调试页面已加载', 'info');
+            log(`当前域名: ${window.location.origin}`, 'info');
+            log(`API 地址: ${API_BASE_URL}`, 'info');
+        });
+    </script>
+    
+    <!-- 引入微信登录组件 -->
+    <script src="wechat-login-component.js"></script>
+</body>
+</html>

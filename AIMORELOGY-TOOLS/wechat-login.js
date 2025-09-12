@@ -16,21 +16,14 @@ class WeChatLoginModule {
         this.expireTimer = null;
         this.currentUser = null;
         
-        // 延迟检查登录状态，确保DOM加载完成
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.checkLoginStatus().catch(error => {
-                    console.error('检查登录状态失败:', error);
-                });
+        console.log('WeChatLoginModule构造函数被调用');
+        
+        // 立即检查登录状态
+        setTimeout(() => {
+            this.checkLoginStatus().catch(error => {
+                console.error('检查登录状态失败:', error);
             });
-        } else {
-            // DOM已经加载完成，立即检查
-            setTimeout(() => {
-                this.checkLoginStatus().catch(error => {
-                    console.error('检查登录状态失败:', error);
-                });
-            }, 50);
-        }
+        }, 100);
     }
 
     // 检查本地存储的登录状态
@@ -69,12 +62,14 @@ class WeChatLoginModule {
             console.log('本地无存储数据');
         }
         
-        // 清除过期或无效数据，但不触发render避免递归
+        // 清除过期或无效数据
         if (stored) {
             localStorage.removeItem(this.config.storageKey);
             console.log('已清除本地存储数据');
         }
+        
         this.currentUser = null;
+        this.onLoginStatusChange(false, null);
         return false;
     }
 
@@ -94,6 +89,28 @@ class WeChatLoginModule {
             console.log('验证响应状态:', response.status);
             const data = await response.json();
             console.log('验证响应数据:', JSON.stringify(data, null, 2));
+            
+            // 如果验证成功且返回了完整用户数据，更新本地存储
+            if (data.success && data.valid && data.user) {
+                console.log('Token验证成功，更新本地用户数据');
+                const currentData = JSON.parse(localStorage.getItem(this.config.storageKey) || '{}');
+                
+                // 合并服务器返回的最新数据
+                const updatedData = {
+                    ...currentData,
+                    ...data.user,
+                    token: token,  // 保持当前token
+                    expireTime: currentData.expireTime,  // 保持过期时间
+                    loginTime: currentData.loginTime     // 保持登录时间
+                };
+                
+                localStorage.setItem(this.config.storageKey, JSON.stringify(updatedData));
+                console.log('本地用户数据已更新:', updatedData);
+                
+                // 更新当前用户对象
+                this.currentUser = updatedData;
+            }
+            
             return data.success && data.valid;
         } catch (error) {
             console.error('验证token失败:', error);
@@ -103,6 +120,8 @@ class WeChatLoginModule {
 
     // 渲染登录按钮或用户信息
     render(container, skipStatusCheck = false) {
+        console.log('render函数被调用，currentUser:', !!this.currentUser);
+        
         if (!container) {
             console.error('容器元素不存在');
             return;
@@ -110,21 +129,11 @@ class WeChatLoginModule {
 
         this.container = container;
         
-        // 如果还没有检查过登录状态且不跳过检查，先检查一次
-        if (this.currentUser === null && !skipStatusCheck) {
-            this.checkLoginStatus().then(() => {
-                // 检查完成后重新渲染，但跳过状态检查避免递归
-                this.render(container, true);
-            }).catch(error => {
-                console.error('检查登录状态失败:', error);
-                this.renderLoginButton();
-            });
-            return;
-        }
-        
         if (this.currentUser) {
+            console.log('渲染用户信息');
             this.renderUserInfo();
         } else {
+            console.log('渲染登录按钮');
             this.renderLoginButton();
         }
     }
@@ -139,22 +148,23 @@ class WeChatLoginModule {
                     }
                     
                     .login-btn {
-                        background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 25px;
-                        cursor: pointer;
-                        font-size: 16px;
-                        font-weight: 500;
                         display: flex;
                         align-items: center;
                         gap: 8px;
+                        padding: 8px 16px;
+                        background: #07c160;
+                        color: white;
+                        border: none;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 500;
                         transition: all 0.3s ease;
-                        box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3);
+                        box-shadow: 0 2px 8px rgba(7, 193, 96, 0.3);
                     }
                     
                     .login-btn:hover {
+                        background: #06ad56;
                         transform: translateY(-2px);
                         box-shadow: 0 6px 16px rgba(7, 193, 96, 0.4);
                     }
@@ -175,21 +185,13 @@ class WeChatLoginModule {
             </div>
         `;
         
-        // 绑定模块实例到容器
-        this.container.__wechatModule = this;
-        
-        // 绑定退出按钮点击事件
-        const logoutBtn = this.container.querySelector('#wechat-logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.logout();
-            });
-        }
-        
-        // 绑定按钮点击事件
+        // 绑定登录按钮点击事件
         const loginBtn = this.container.querySelector('#wechat-login-btn');
         if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
+            loginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('登录按钮被点击');
                 this.showLoginModal();
             });
         }
@@ -197,6 +199,7 @@ class WeChatLoginModule {
 
     // 渲染用户信息
     renderUserInfo() {
+        console.log('开始渲染用户信息...');
         const user = this.currentUser;
         const levelInfo = this.getUserLevelInfo(user.level);
         
@@ -254,7 +257,12 @@ class WeChatLoginModule {
                         font-size: 12px;
                     }
                     
-                    .logout-btn {
+                    .user-actions {
+                        display: flex;
+                        gap: 4px;
+                    }
+                    
+                    .logout-btn, .refresh-btn {
                         background: #f5f5f5;
                         border: none;
                         padding: 4px 8px;
@@ -265,8 +273,13 @@ class WeChatLoginModule {
                         transition: background 0.2s;
                     }
                     
-                    .logout-btn:hover {
+                    .logout-btn:hover, .refresh-btn:hover {
                         background: #e0e0e0;
+                    }
+                    
+                    .refresh-btn {
+                        padding: 4px 6px;
+                        font-size: 10px;
                     }
                     
                     @media (max-width: 768px) {
@@ -291,14 +304,78 @@ class WeChatLoginModule {
                     </div>
                 </div>
                 
-                <button class="logout-btn" id="wechat-logout-btn">
-                    退出
-                </button>
+                <div class="user-actions">
+                    <button class="refresh-btn" id="wechat-refresh-btn" title="刷新用户数据">
+                        🔄
+                    </button>
+                    <button class="logout-btn" id="wechat-logout-btn">
+                        退出
+                    </button>
+                </div>
             </div>
         `;
         
-        // 绑定模块实例到容器
-        this.container.__wechatModule = this;
+        // 立即绑定事件
+        this.bindUserInfoEvents();
+    }
+
+    // 绑定用户信息按钮事件
+    bindUserInfoEvents() {
+        console.log('开始绑定用户信息按钮事件...');
+        
+        // 使用setTimeout确保DOM已经渲染完成
+        setTimeout(() => {
+            // 绑定退出按钮
+            const logoutBtn = this.container.querySelector('#wechat-logout-btn');
+            console.log('找到退出按钮:', !!logoutBtn);
+            if (logoutBtn) {
+                // 移除可能存在的旧事件监听器
+                logoutBtn.replaceWith(logoutBtn.cloneNode(true));
+                const newLogoutBtn = this.container.querySelector('#wechat-logout-btn');
+                
+                newLogoutBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('退出按钮被点击 - onclick方式');
+                    this.logout();
+                    return false;
+                };
+                console.log('退出按钮事件已绑定 - onclick方式');
+            }
+            
+            // 绑定刷新按钮
+            const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
+            console.log('找到刷新按钮:', !!refreshBtn);
+            if (refreshBtn) {
+                // 移除可能存在的旧事件监听器
+                refreshBtn.replaceWith(refreshBtn.cloneNode(true));
+                const newRefreshBtn = this.container.querySelector('#wechat-refresh-btn');
+                
+                newRefreshBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('刷新按钮被点击 - onclick方式');
+                    
+                    newRefreshBtn.disabled = true;
+                    newRefreshBtn.textContent = '⏳';
+                    
+                    try {
+                        const success = await this.refreshUserData();
+                        if (success) {
+                            console.log('用户数据已刷新');
+                            this.renderUserInfo();
+                        }
+                    } catch (error) {
+                        console.error('刷新失败:', error);
+                    } finally {
+                        newRefreshBtn.disabled = false;
+                        newRefreshBtn.textContent = '🔄';
+                    }
+                    return false;
+                };
+                console.log('刷新按钮事件已绑定 - onclick方式');
+            }
+        }, 100);
     }
 
     // 显示登录弹窗
@@ -347,377 +424,188 @@ class WeChatLoginModule {
                 }
                 
                 .modal-title {
-                    font-size: 20px;
+                    font-size: 24px;
                     font-weight: 600;
-                    margin-bottom: 20px;
+                    margin-bottom: 10px;
                     color: #333;
                 }
                 
+                .modal-subtitle {
+                    color: #666;
+                    margin-bottom: 30px;
+                    font-size: 14px;
+                }
+                
                 .qr-container {
-                    position: relative;
-                    display: inline-block;
-                    margin: 20px 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
                 }
                 
                 .qr-code {
                     width: 200px;
                     height: 200px;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 12px;
-                    display: block;
-                    margin: 0 auto;
-                }
-                
-                .qr-loading {
-                    width: 200px;
-                    height: 200px;
-                    border: 2px solid #e0e0e0;
-                    border-radius: 12px;
+                    border: 1px solid #eee;
+                    border-radius: 10px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: #f8f9fa;
+                    background: #f9f9f9;
+                }
+                
+                .loading {
                     color: #666;
                     font-size: 14px;
                 }
                 
-                .qr-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(255, 255, 255, 0.9);
-                    border-radius: 12px;
-                    display: none;
-                    align-items: center;
-                    justify-content: center;
-                    flex-direction: column;
+                .status {
+                    padding: 10px 20px;
+                    border-radius: 20px;
                     font-size: 14px;
-                    color: #666;
+                    font-weight: 500;
                 }
                 
-                .login-status {
-                    margin: 15px 0;
-                    font-size: 14px;
-                    color: #666;
-                    min-height: 20px;
+                .status.waiting {
+                    background: #e3f2fd;
+                    color: #1976d2;
                 }
                 
-                .login-tips {
-                    font-size: 12px;
-                    color: #999;
-                    line-height: 1.4;
+                .status.scanned {
+                    background: #fff3e0;
+                    color: #f57c00;
                 }
                 
-                .refresh-btn {
-                    background: #07c160;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    margin-top: 10px;
+                .status.success {
+                    background: #e8f5e8;
+                    color: #2e7d32;
                 }
                 
-                .loading-spinner {
-                    display: inline-block;
-                    width: 20px;
-                    height: 20px;
-                    border: 2px solid #f3f3f3;
-                    border-top: 2px solid #07c160;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
+                .status.error {
+                    background: #ffebee;
+                    color: #c62828;
                 }
                 
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                .status.expired {
+                    background: #fafafa;
+                    color: #757575;
                 }
             </style>
             
             <div class="modal-content">
-                <button class="close-btn" id="modal-close-btn">&times;</button>
+                <button class="close-btn" onclick="this.closest('.wechat-login-modal').remove()">&times;</button>
                 
-                <h3 class="modal-title">微信扫码登录</h3>
+                <div class="modal-title">微信登录</div>
+                <div class="modal-subtitle">请使用微信扫描二维码登录</div>
                 
                 <div class="qr-container">
-                    <div class="qr-loading" id="qr-loading">
-                        <div class="loading-spinner"></div>
+                    <div class="qr-code">
+                        <div class="loading">正在生成二维码...</div>
                     </div>
-                    <img class="qr-code" id="qr-code" style="display: none;" alt="微信登录二维码">
-                    <div class="qr-overlay" id="qr-overlay">
-                        <div id="overlay-content"></div>
-                    </div>
-                </div>
-                
-                <div class="login-status" id="login-status">正在生成二维码...</div>
-                
-                <div class="login-tips">
-                    请使用微信扫描二维码登录<br>
-                    扫码后请在手机上确认登录
+                    <div class="status waiting" id="status">等待扫描</div>
                 </div>
             </div>
         `;
         
         document.body.appendChild(modal);
         
-        // 绑定模块实例到弹窗
-        modal.__wechatModule = this;
-        
         // 点击背景关闭弹窗
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                this.closeModal();
+                modal.remove();
             }
         });
         
-        // 绑定弹窗内按钮事件
-        const closeBtn = modal.querySelector('#modal-close-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                this.closeModal();
-            });
-        }
-        
-        // 使用事件委托处理刷新按钮
-        modal.addEventListener('click', (e) => {
-            if (e.target.matches('[data-action="refresh"]')) {
-                this.refresh();
-            }
-        });
-        
-        // 开始登录流程
-        this.startLogin();
+        // 生成二维码
+        this.generateQRCode(modal);
     }
 
-    // 开始登录流程
-    async startLogin() {
+    // 生成二维码
+    async generateQRCode(modal) {
         try {
-            await this.createQR();
-        } catch (error) {
-            console.error('登录失败:', error);
-            this.showError('登录失败，请重试');
-        }
-    }
-
-    // 创建二维码
-    async createQR() {
-        try {
-            this.showStatus('正在生成二维码...');
-            
-            const response = await fetch(`${this.config.apiBaseUrl}/create_qr`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
+            const response = await fetch(`${this.config.apiBaseUrl}/generate_qr`);
             const data = await response.json();
             
             if (data.success) {
                 this.sessionId = data.sessionId;
-                this.showQR(data.qrUrl);
-                this.startPolling();
-                this.startExpireTimer(data.expireSeconds || 600);
-                this.showStatus('请使用微信扫描二维码');
+                
+                // 显示二维码
+                const qrContainer = modal.querySelector('.qr-code');
+                qrContainer.innerHTML = `<img src="${data.qrCodeUrl}" alt="微信登录二维码" style="width: 100%; height: 100%; object-fit: contain;">`;
+                
+                // 开始轮询状态
+                this.startPolling(modal);
+                
+                // 设置过期定时器
+                this.expireTimer = setTimeout(() => {
+                    this.stopPolling();
+                    const statusEl = modal.querySelector('#status');
+                    if (statusEl) {
+                        statusEl.textContent = '二维码已过期，请重新获取';
+                        statusEl.className = 'status expired';
+                    }
+                }, this.config.qrExpireTime);
             } else {
                 throw new Error(data.error || '生成二维码失败');
             }
         } catch (error) {
-            console.error('创建二维码失败:', error);
-            this.showError('生成二维码失败，请重试');
+            console.error('生成二维码失败:', error);
+            const qrContainer = modal.querySelector('.qr-code');
+            qrContainer.innerHTML = '<div class="loading">生成二维码失败，请重试</div>';
         }
     }
 
-    // 显示二维码
-    showQR(qrUrl) {
-        const qrLoading = document.getElementById('qr-loading');
-        const qrCode = document.getElementById('qr-code');
+    // 开始轮询登录状态
+    startPolling(modal) {
+        if (!this.sessionId) return;
         
-        if (qrCode && qrLoading) {
-            qrCode.src = qrUrl;
-            qrCode.onload = () => {
-                qrLoading.style.display = 'none';
-                qrCode.style.display = 'block';
-            };
-            qrCode.onerror = () => {
-                this.showError('二维码加载失败');
-            };
-        }
-    }
-
-    // 开始轮询
-    startPolling() {
-        if (this.pollTimer) {
-            clearInterval(this.pollTimer);
-        }
-
         this.pollTimer = setInterval(async () => {
             try {
-                const response = await fetch(`${this.config.apiBaseUrl}/poll?id=${this.sessionId}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
+                const response = await fetch(`${this.config.apiBaseUrl}/check_login?sessionId=${this.sessionId}`);
                 const data = await response.json();
                 
+                const statusEl = modal.querySelector('#status');
+                
                 if (data.status === 'scanned') {
-                    this.showScanned();
+                    statusEl.textContent = '已扫描，请在手机上确认登录';
+                    statusEl.className = 'status scanned';
                 } else if (data.status === 'success') {
-                    await this.handleLoginSuccess(data);
+                    statusEl.textContent = '登录成功！';
+                    statusEl.className = 'status success';
+                    
+                    // 保存用户信息
+                    const userData = {
+                        ...data.userInfo,
+                        token: data.token,
+                        expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7天过期
+                        loginTime: Date.now()
+                    };
+                    
+                    localStorage.setItem(this.config.storageKey, JSON.stringify(userData));
+                    this.currentUser = userData;
+                    
+                    // 停止轮询
+                    this.stopPolling();
+                    
+                    // 关闭弹窗
+                    setTimeout(() => {
+                        modal.remove();
+                        this.render(this.container);
+                        this.onLoginStatusChange(true, userData);
+                    }, 1500);
+                } else if (data.status === 'expired') {
+                    statusEl.textContent = '二维码已过期，请重新获取';
+                    statusEl.className = 'status expired';
+                    this.stopPolling();
+                } else if (data.status === 'error') {
+                    statusEl.textContent = data.message || '登录失败，请重试';
+                    statusEl.className = 'status error';
+                    this.stopPolling();
                 }
             } catch (error) {
-                console.error('轮询状态失败:', error);
+                console.error('轮询登录状态失败:', error);
             }
         }, this.config.pollInterval);
-    }
-
-    // 开始过期计时器
-    startExpireTimer(expireSeconds) {
-        if (this.expireTimer) {
-            clearTimeout(this.expireTimer);
-        }
-
-        this.expireTimer = setTimeout(() => {
-            this.handleQRExpired();
-        }, expireSeconds * 1000);
-    }
-
-    // 显示扫描成功
-    showScanned() {
-        this.showOverlay(`
-            <div style="color: #07c160; font-size: 24px; margin-bottom: 10px;">📱</div>
-            <div>扫描成功</div>
-            <div style="font-size: 12px; margin-top: 5px;">请在手机上确认登录</div>
-        `);
-        this.showStatus('已扫描，请在手机上确认');
-    }
-
-    // 处理登录成功
-    async handleLoginSuccess(pollData) {
-        this.stopPolling();
-        this.stopExpireTimer();
-        
-        try {
-            // 调用完成登录接口
-            const response = await fetch(`${this.config.apiBaseUrl}/finalize_login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sessionId: this.sessionId
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                // 保存用户信息到本地存储
-                const userData = {
-                    ...data.userInfo,
-                    token: data.token,
-                    expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7天过期
-                    loginTime: Date.now()
-                };
-                
-                localStorage.setItem(this.config.storageKey, JSON.stringify(userData));
-                this.currentUser = userData;
-                
-                this.showOverlay(`
-                    <div style="color: #07c160; font-size: 24px; margin-bottom: 10px;">✅</div>
-                    <div>登录成功</div>
-                    <div style="font-size: 12px; margin-top: 5px;">欢迎 ${userData.nickname}</div>
-                `);
-                
-                // 延迟关闭弹窗并更新UI
-                setTimeout(() => {
-                    this.closeModal();
-                    this.render(this.container);
-                    this.onLoginStatusChange(true, userData);
-                }, 1500);
-                
-            } else {
-                throw new Error(data.error || '完成登录失败');
-            }
-        } catch (error) {
-            console.error('完成登录失败:', error);
-            this.showError('登录失败，请重试');
-        }
-    }
-
-    // 处理二维码过期
-    handleQRExpired() {
-        this.stopPolling();
-        this.showOverlay(`
-            <div style="color: #fa5151; font-size: 24px; margin-bottom: 10px;">⏰</div>
-            <div>二维码已过期</div>
-            <button class="refresh-btn" data-action="refresh">
-                刷新二维码
-            </button>
-        `);
-        this.showStatus('二维码已过期，请刷新');
-    }
-
-    // 显示覆盖层
-    showOverlay(content) {
-        const overlay = document.getElementById('qr-overlay');
-        const overlayContent = document.getElementById('overlay-content');
-        if (overlay && overlayContent) {
-            overlayContent.innerHTML = content;
-            overlay.style.display = 'flex';
-        }
-    }
-
-    // 显示状态
-    showStatus(message) {
-        const statusEl = document.getElementById('login-status');
-        if (statusEl) {
-            statusEl.textContent = message;
-        }
-    }
-
-    // 显示错误
-    showError(message) {
-        this.stopPolling();
-        this.stopExpireTimer();
-        this.showOverlay(`
-            <div style="color: #fa5151; font-size: 24px; margin-bottom: 10px;">❌</div>
-            <div>${message}</div>
-            <button class="refresh-btn" data-action="refresh">
-                重新生成
-            </button>
-        `);
-        this.showStatus(message);
-    }
-
-    // 刷新二维码
-    refresh() {
-        this.stopPolling();
-        this.stopExpireTimer();
-        
-        const overlay = document.getElementById('qr-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-        }
-        
-        // 重置显示
-        const qrLoading = document.getElementById('qr-loading');
-        const qrCode = document.getElementById('qr-code');
-        if (qrLoading && qrCode) {
-            qrLoading.style.display = 'flex';
-            qrCode.style.display = 'none';
-        }
-        
-        // 重新创建二维码
-        this.createQR();
     }
 
     // 停止轮询
@@ -726,10 +614,6 @@ class WeChatLoginModule {
             clearInterval(this.pollTimer);
             this.pollTimer = null;
         }
-    }
-
-    // 停止过期计时器
-    stopExpireTimer() {
         if (this.expireTimer) {
             clearTimeout(this.expireTimer);
             this.expireTimer = null;
@@ -738,25 +622,64 @@ class WeChatLoginModule {
 
     // 关闭弹窗
     closeModal() {
-        this.stopPolling();
-        this.stopExpireTimer();
-        
         const modal = document.querySelector('.wechat-login-modal');
         if (modal) {
             modal.remove();
         }
+        this.stopPolling();
     }
 
     // 退出登录
     logout() {
+        console.log('开始退出登录...');
+        
+        // 清除本地存储
         localStorage.removeItem(this.config.storageKey);
+        console.log('已清除本地存储数据');
+        
+        // 重置当前用户
         this.currentUser = null;
         
+        // 重新渲染界面
         if (this.container) {
-            this.render(this.container, true); // 跳过状态检查避免递归
+            this.renderLoginButton();
         }
         
+        // 通知登录状态变化
         this.onLoginStatusChange(false, null);
+        
+        console.log('退出登录完成');
+    }
+
+    // 手动刷新用户数据
+    async refreshUserData() {
+        console.log('开始刷新用户数据...');
+        
+        const stored = localStorage.getItem(this.config.storageKey);
+        if (!stored) {
+            console.log('没有本地存储数据');
+            return false;
+        }
+
+        try {
+            const userData = JSON.parse(stored);
+            if (userData.token && userData.expireTime > Date.now()) {
+                console.log('强制验证并更新用户数据...');
+                const isValid = await this.validateToken(userData.token);
+                if (isValid) {
+                    console.log('用户数据刷新成功');
+                    return true;
+                } else {
+                    console.log('Token验证失败，清除数据');
+                    this.logout();
+                    return false;
+                }
+            }
+        } catch (error) {
+            console.error('刷新用户数据失败:', error);
+        }
+        
+        return false;
     }
 
     // 获取用户等级信息
@@ -890,13 +813,13 @@ class WeChatLoginModule {
 
     // 登录状态变化回调 - 可被外部重写
     onLoginStatusChange(isLoggedIn, userData) {
+        console.log('登录状态变化:', isLoggedIn ? '已登录' : '未登录', userData);
+        
         // 触发自定义事件
         const event = new CustomEvent('wechatLoginStatusChange', {
             detail: { isLoggedIn, userData }
         });
         document.dispatchEvent(event);
-        
-        console.log('登录状态变化:', isLoggedIn ? '已登录' : '未登录', userData);
     }
 }
 

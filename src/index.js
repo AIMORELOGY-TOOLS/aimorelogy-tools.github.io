@@ -324,12 +324,25 @@ async function getWechatUserInfo(env, openid) {
     
     if (userInfo.errcode) {
       console.error('获取微信用户信息失败:', userInfo.errmsg);
-      return null;
+      // 如果获取失败，返回基本信息
+      return {
+        openid: openid,
+        nickname: `用户${openid.slice(-6)}`,
+        sex: 0,
+        province: '',
+        city: '',
+        country: '',
+        headimgurl: '',
+        subscribe_time: 0,
+        unionid: '',
+        subscribe: 0
+      };
     }
     
+    // 确保返回完整的用户信息
     return {
-      openid: userInfo.openid,
-      nickname: userInfo.nickname || '',
+      openid: userInfo.openid || openid,
+      nickname: userInfo.nickname || `用户${openid.slice(-6)}`,
       sex: userInfo.sex || 0,
       province: userInfo.province || '',
       city: userInfo.city || '',
@@ -342,11 +355,24 @@ async function getWechatUserInfo(env, openid) {
       tagid_list: userInfo.tagid_list || [],
       subscribe_scene: userInfo.subscribe_scene || '',
       qr_scene: userInfo.qr_scene || 0,
-      qr_scene_str: userInfo.qr_scene_str || ''
+      qr_scene_str: userInfo.qr_scene_str || '',
+      subscribe: userInfo.subscribe || 1 // 扫码用户默认已关注
     };
   } catch (error) {
     console.error('获取微信用户信息异常:', error);
-    return null;
+    // 异常情况下返回基本信息
+    return {
+      openid: openid,
+      nickname: `用户${openid.slice(-6)}`,
+      sex: 0,
+      province: '',
+      city: '',
+      country: '',
+      headimgurl: '',
+      subscribe_time: Date.now(),
+      unionid: '',
+      subscribe: 1
+    };
   }
 }
 

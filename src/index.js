@@ -27,6 +27,12 @@ export default {
         return await handlePoll(request, env);
       } else if (url.pathname === '/finalize_login') {
         return await handleFinalizeLogin(request, env);
+      } else if (url.pathname === '/get_user_info') {
+        return await handleGetUserInfo(request, env);
+      } else if (url.pathname === '/update_usage') {
+        return await handleUpdateUsage(request, env);
+      } else if (url.pathname === '/check_permission') {
+        return await handleCheckPermission(request, env);
       } else if (url.pathname === '/ws') {
         return await handleWsUpgrade(request, env);
       } else if (url.pathname === '/') {
@@ -232,12 +238,15 @@ async function handleCreateQR(request, env) {
 
     const qrUrl = `https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=${encodeURIComponent(qrData.ticket)}`;
 
-    return new Response(JSON.stringify({
+    const responseData = {
+      success: true,
       sessionId: sessionId,
       qrUrl: qrUrl,
       ticket: qrData.ticket,
       expireSeconds: 600
-    }), {
+    };
+    
+    return new Response(JSON.stringify(responseData), {
       headers: { 
         'Content-Type': 'application/json',
         ...corsHeaders 
@@ -299,15 +308,22 @@ async function handleFinalizeLogin(request, env) {
     const data = await response.json();
     
     if (data.status === 'scanned' && data.openid) {
+      // 获取或创建用户信息
+      const userInfo = await getOrCreateUser(env, data.openid);
+      
       // 生成登录 token
       const token = generateLoginToken(data.openid);
       const loginTime = new Date().toISOString();
+      
+      // 更新最后登录时间
+      await updateUserLastLogin(env, data.openid, loginTime);
       
       return new Response(JSON.stringify({
         success: true,
         token: token,
         openid: data.openid,
-        loginTime: loginTime
+        loginTime: loginTime,
+        userInfo: userInfo
       }), {
         headers: { 
           'Content-Type': 'application/json',
@@ -650,6 +666,375 @@ function extractXmlValue(xml, tagName) {
   const regex = new RegExp(`<${tagName}><!\\[CDATA\\[([^\\]]+)\\]\\]></${tagName}>|<${tagName}>([^<]+)</${tagName}>`, 'i');
   const match = xml.match(regex);
   return match ? (match[1] || match[2] || '').trim() : '';
+}
+
+// 用户管理相关函数
+
+// 获取用户信息
+async function handleGetUserInfo(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: '仅支持 POST 请求' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+
+  try {
+    const { token } = await request.json();
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: '缺少认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const openid = extractOpenidFromToken(token);
+    if (!openid) {
+      return new Response(JSON.stringify({ error: '无效的认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const userInfo = await getUserInfo(env, openid);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      userInfo: userInfo
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+
+  } catch (error) {
+    console.error('获取用户信息错误:', error);
+    return new Response(JSON.stringify({
+      error: '获取用户信息失败',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 更新使用次数
+async function handleUpdateUsage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: '仅支持 POST 请求' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+
+  try {
+    const { token, action, amount = 1 } = await request.json();
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: '缺少认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const openid = extractOpenidFromToken(token);
+    if (!openid) {
+      return new Response(JSON.stringify({ error: '无效的认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const result = await updateUserUsage(env, openid, action, amount);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      usage: result
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+
+  } catch (error) {
+    console.error('更新使用次数错误:', error);
+    return new Response(JSON.stringify({
+      error: '更新使用次数失败',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 检查权限
+async function handleCheckPermission(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: '仅支持 POST 请求' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+
+  try {
+    const { token, action, requiredLevel = 'normal' } = await request.json();
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: '缺少认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const openid = extractOpenidFromToken(token);
+    if (!openid) {
+      return new Response(JSON.stringify({ error: '无效的认证令牌' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const permission = await checkUserPermission(env, openid, action, requiredLevel);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      permission: permission
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+
+  } catch (error) {
+    console.error('检查权限错误:', error);
+    return new Response(JSON.stringify({
+      error: '检查权限失败',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 获取或创建用户
+async function getOrCreateUser(env, openid) {
+  try {
+    const userKey = `user:${openid}`;
+    const existingUser = await env.WECHAT_KV.get(userKey);
+    
+    if (existingUser) {
+      return JSON.parse(existingUser);
+    }
+    
+    // 创建新用户
+    const newUser = {
+      openid: openid,
+      level: 'normal', // 默认等级：普通用户
+      nickname: `用户${openid.slice(-6)}`, // 默认昵称
+      avatar: '', // 头像URL
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      usage: {
+        total: 0,
+        daily: 0,
+        lastResetDate: new Date().toISOString().split('T')[0]
+      },
+      limits: getUserLimits('normal')
+    };
+    
+    await env.WECHAT_KV.put(userKey, JSON.stringify(newUser));
+    console.log('创建新用户:', openid);
+    
+    return newUser;
+  } catch (error) {
+    console.error('获取或创建用户失败:', error);
+    throw error;
+  }
+}
+
+// 获取用户信息
+async function getUserInfo(env, openid) {
+  try {
+    const userKey = `user:${openid}`;
+    const userData = await env.WECHAT_KV.get(userKey);
+    
+    if (!userData) {
+      throw new Error('用户不存在');
+    }
+    
+    const user = JSON.parse(userData);
+    
+    // 检查是否需要重置每日使用次数
+    const today = new Date().toISOString().split('T')[0];
+    if (user.usage.lastResetDate !== today) {
+      user.usage.daily = 0;
+      user.usage.lastResetDate = today;
+      await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    throw error;
+  }
+}
+
+// 更新用户最后登录时间
+async function updateUserLastLogin(env, openid, loginTime) {
+  try {
+    const userKey = `user:${openid}`;
+    const userData = await env.WECHAT_KV.get(userKey);
+    
+    if (userData) {
+      const user = JSON.parse(userData);
+      user.lastLoginAt = loginTime;
+      await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+    }
+  } catch (error) {
+    console.error('更新最后登录时间失败:', error);
+  }
+}
+
+// 更新用户使用次数
+async function updateUserUsage(env, openid, action, amount = 1) {
+  try {
+    const user = await getUserInfo(env, openid);
+    
+    user.usage.total += amount;
+    user.usage.daily += amount;
+    
+    const userKey = `user:${openid}`;
+    await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+    
+    console.log(`用户 ${openid} 使用次数更新: ${action} +${amount}`);
+    
+    return user.usage;
+  } catch (error) {
+    console.error('更新使用次数失败:', error);
+    throw error;
+  }
+}
+
+// 检查用户权限
+async function checkUserPermission(env, openid, action, requiredLevel = 'normal') {
+  try {
+    const user = await getUserInfo(env, openid);
+    
+    // 检查用户等级权限
+    const levelPermission = checkLevelPermission(user.level, requiredLevel);
+    if (!levelPermission.allowed) {
+      return levelPermission;
+    }
+    
+    // 检查使用次数限制
+    const usagePermission = checkUsageLimit(user);
+    if (!usagePermission.allowed) {
+      return usagePermission;
+    }
+    
+    return {
+      allowed: true,
+      user: user,
+      remainingUsage: user.limits.daily - user.usage.daily
+    };
+    
+  } catch (error) {
+    console.error('检查权限失败:', error);
+    return {
+      allowed: false,
+      reason: '权限检查失败'
+    };
+  }
+}
+
+// 检查等级权限
+function checkLevelPermission(userLevel, requiredLevel) {
+  const levels = {
+    'normal': 1,
+    'vip': 2,
+    'svip': 3,
+    'admin': 4
+  };
+  
+  const userLevelNum = levels[userLevel] || 0;
+  const requiredLevelNum = levels[requiredLevel] || 1;
+  
+  if (userLevelNum >= requiredLevelNum) {
+    return { allowed: true };
+  } else {
+    return {
+      allowed: false,
+      reason: `需要 ${requiredLevel} 及以上等级，当前等级：${userLevel}`
+    };
+  }
+}
+
+// 检查使用次数限制
+function checkUsageLimit(user) {
+  if (user.level === 'admin') {
+    return { allowed: true }; // 管理员无限制
+  }
+  
+  if (user.usage.daily >= user.limits.daily) {
+    return {
+      allowed: false,
+      reason: `今日使用次数已达上限 (${user.limits.daily}次)`
+    };
+  }
+  
+  return { allowed: true };
+}
+
+// 获取用户等级限制
+function getUserLimits(level) {
+  const limits = {
+    'normal': {
+      daily: 10,
+      features: ['basic']
+    },
+    'vip': {
+      daily: 50,
+      features: ['basic', 'advanced']
+    },
+    'svip': {
+      daily: 200,
+      features: ['basic', 'advanced', 'premium']
+    },
+    'admin': {
+      daily: -1, // 无限制
+      features: ['basic', 'advanced', 'premium', 'admin']
+    }
+  };
+  
+  return limits[level] || limits['normal'];
+}
+
+// 从token中提取openid
+function extractOpenidFromToken(token) {
+  try {
+    const decoded = atob(token);
+    const parts = decoded.split(':');
+    return parts[0] || null;
+  } catch (error) {
+    console.error('解析token失败:', error);
+    return null;
+  }
 }
 
 export { Session };

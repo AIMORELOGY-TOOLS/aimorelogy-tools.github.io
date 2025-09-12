@@ -15,167 +15,486 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
+        /* 头部导航 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .logo {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.8em;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 0.9em;
-        }
-
-        .wechat-login-container {
-            margin: 20px 0;
-        }
-
-        .features {
-            margin-top: 30px;
-            text-align: left;
-        }
-
-        .feature {
             display: flex;
             align-items: center;
-            margin: 10px 0;
-            color: #555;
-            font-size: 0.9em;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            text-decoration: none;
         }
 
-        .feature-icon {
-            margin-right: 10px;
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
             color: #667eea;
         }
 
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            color: #999;
-            font-size: 0.8em;
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                padding: 30px 20px;
+        /* 主要内容区域 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .hero-title {
+            font-size: 3.5em;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.2em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .hero-features {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+        }
+
+        /* 功能模块区域 */
+        .modules-section {
+            margin-top: 60px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .module-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .module-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .module-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .module-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .status-available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-coming-soon {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .module-button {
+            width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
             }
-            
-            h1 {
-                font-size: 1.5em;
+
+            .hero-title {
+                font-size: 2.5em;
+            }
+
+            .hero-features {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .main-container {
+                padding: 20px 15px;
             }
         }
+
+        /* 用户等级样式 */
+        .user-level-normal { background: #909399; }
+        .user-level-vip { background: #E6A23C; }
+        .user-level-svip { background: #F56C6C; }
+        .user-level-admin { background: #67C23A; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🤖</div>
-        <h1>AI文章生成平台</h1>
-        <p class="subtitle">使用微信扫码登录，开始您的AI创作之旅</p>
-        
-        <div class="wechat-login-container">
-            <div id="wechat-login"></div>
-        </div>
-
-        <div class="features">
-            <div class="feature">
-                <span class="feature-icon">✨</span>
-                <span>AI智能文章生成</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">🔒</span>
-                <span>安全的微信登录</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">📱</span>
-                <span>响应式设计</span>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">⚡</span>
-                <span>快速部署</span>
+    <!-- 头部导航 -->
+    <header class="header">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span class="logo-icon">🤖</span>
+                <span>AIMORELOGY</span>
+            </a>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#home">首页</a></li>
+                    <li><a href="#features">功能</a></li>
+                    <li><a href="#pricing">定价</a></li>
+                    <li><a href="#about">关于</a></li>
+                </ul>
+            </nav>
+            
+            <div class="user-section">
+                <!-- 微信登录模块将在这里渲染 -->
+                <div id="wechat-login-container"></div>
             </div>
         </div>
+    </header>
 
-        <div class="footer">
-            <p>模块化设计 · 易于集成 · 开源免费</p>
-        </div>
-    </div>
-
-    <script>
-        // 配置后端 API 地址 - 使用你的自定义域名
-        window.WECHAT_LOGIN_CONFIG = {
-            apiBaseUrl: 'https://aimorelogybackend.site',
-            onLoginSuccess: function(userInfo, token) {
-                console.log('登录成功:', userInfo);
-                alert(`欢迎 ${userInfo.nickname}！登录成功，即将跳转到主页面...`);
-                
-                // 这里可以跳转到你的主应用页面
-                // window.location.href = '/dashboard.html';
-                
-                // 或者显示用户信息
-                showUserInfo(userInfo, token);
-            },
-            onLoginError: function(error) {
-                console.error('登录失败:', error);
-                alert('登录失败，请重试');
-            }
-        };
-
-        function showUserInfo(userInfo, token) {
-            const container = document.querySelector('.container');
-            container.innerHTML = `
-                <div class="logo">✅</div>
-                <h1>登录成功</h1>
-                <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: left;">
-                    <p><strong>昵称:</strong> ${userInfo.nickname}</p>
-                    <p><strong>OpenID:</strong> ${userInfo.openid}</p>
-                    <p><strong>Token:</strong> ${token.substring(0, 20)}...</p>
+    <!-- 主要内容 -->
+    <main class="main-container">
+        <!-- 英雄区域 -->
+        <section class="hero-section">
+            <h1 class="hero-title">AI 智能创作平台</h1>
+            <p class="hero-subtitle">
+                基于先进的人工智能技术，为您提供高质量的内容创作服务<br>
+                模块化设计，灵活扩展，满足不同场景的创作需求
+            </p>
+            
+            <div class="hero-features">
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <span>快速生成</span>
                 </div>
-                <button onclick="location.reload()" style="
-                    background: #667eea;
-                    color: white;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 16px;
-                ">重新登录</button>
-            `;
-        }
-    </script>
-    
-    <!-- 引入微信登录组件 -->
-    <script src="wechat-login-component.js"></script>
+                <div class="feature-item">
+                    <span class="feature-icon">🎯</span>
+                    <span>精准定制</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔒</span>
+                    <span>安全可靠</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📱</span>
+                    <span>多端支持</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能模块区域 -->
+        <section class="modules-section">
+            <h2 class="section-title">功能模块</h2>
+            
+            <div class="modules-grid">
+                <!-- AI 文章生成模块 -->
+                <div class="module-card">
+                    <span class="module-icon">📝</span>
+                    <h3 class="module-title">AI 文章生成</h3>
+                    <p class="module-description">
+                        基于 DeepSeek 大模型，智能生成高质量文章内容。支持多种文体风格，满足不同创作需求。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- 智能摘要模块 -->
+                <div class="module-card">
+                    <span class="module-icon">📋</span>
+                    <h3 class="module-title">智能摘要</h3>
+                    <p class="module-description">
+                        自动提取文章核心内容，生成精准摘要。支持长文本处理，快速获取关键信息。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- 内容优化模块 -->
+                <div class="module-card">
+                    <span class="module-icon">✨</span>
+                    <h3 class="module-title">内容优化</h3>
+                    <p class="module-description">
+                        智能优化文章结构和表达，提升内容质量。包括语法检查、风格调整等功能。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- SEO 优化模块 -->
+                <div class="module-card">
+                    <span class="module-icon">🔍</span>
+                    <h3 class="module-title">SEO 优化</h3>
+                    <p class="module-description">
+                        针对搜索引擎优化内容，提升文章排名。自动生成关键词和元描述。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- 多语言翻译模块 -->
+                <div class="module-card">
+                    <span class="module-icon">🌍</span>
+                    <h3 class="module-title">多语言翻译</h3>
+                    <p class="module-description">
+                        支持多种语言间的智能翻译，保持原文语义和风格。适用于国际化内容创作。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- 图片生成模块 -->
+                <div class="module-card">
+                    <span class="module-icon">🎨</span>
+                    <h3 class="module-title">AI 图片生成</h3>
+                    <p class="module-description">
+                        根据文字描述生成高质量图片，为文章配图。支持多种艺术风格和尺寸。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 引入微信登录模块 -->
+    <script src="sections/wechat-login.js"></script>
     
     <script>
-        // 初始化微信登录组件
+        // 初始化微信登录模块
+        let wechatLogin;
+        
         document.addEventListener('DOMContentLoaded', function() {
-            const loginContainer = document.getElementById('wechat-login');
-            if (loginContainer && window.WeChatLogin) {
-                new window.WeChatLogin(loginContainer, window.WECHAT_LOGIN_CONFIG);
-            }
+            // 创建微信登录实例
+            wechatLogin = new WeChatLoginModule({
+                apiBaseUrl: 'https://aimorelogybackend.site'
+            });
+            
+            // 渲染到导航栏
+            const container = document.getElementById('wechat-login-container');
+            wechatLogin.render(container);
+            
+            // 监听登录状态变化
+            document.addEventListener('wechatLoginStatusChange', function(event) {
+                const { isLoggedIn, userData } = event.detail;
+                
+                if (isLoggedIn) {
+                    console.log('用户已登录:', userData);
+                    // 可以在这里添加登录后的逻辑
+                    updateModulesAccess(userData);
+                } else {
+                    console.log('用户已退出登录');
+                    // 可以在这里添加退出登录后的逻辑
+                    updateModulesAccess(null);
+                }
+            });
         });
+
+        // 更新模块访问权限
+        function updateModulesAccess(userData) {
+            const moduleCards = document.querySelectorAll('.module-card');
+            
+            moduleCards.forEach(card => {
+                const button = card.querySelector('.module-button');
+                const status = card.querySelector('.module-status');
+                
+                if (userData) {
+                    // 用户已登录，可以启用某些模块
+                    // 这里可以根据用户等级来决定哪些模块可用
+                    const levelInfo = wechatLogin.getUserLevelInfo(userData.level);
+                    
+                    // 示例：根据用户等级启用不同模块
+                    if (userData.level === 'admin') {
+                        // 管理员可以访问所有模块
+                        button.textContent = '立即使用';
+                        button.className = 'module-button btn-primary';
+                        button.disabled = false;
+                        status.textContent = '可用';
+                        status.className = 'module-status status-available';
+                    } else {
+                        // 其他用户暂时还是显示即将上线
+                        // 后续开发具体功能时再修改
+                    }
+                } else {
+                    // 用户未登录，所有模块都不可用
+                    button.textContent = '敬请期待';
+                    button.className = 'module-button btn-disabled';
+                    button.disabled = true;
+                    status.textContent = '即将上线';
+                    status.className = 'module-status status-coming-soon';
+                }
+            });
+        }
+
+        // 模块点击处理
+        function handleModuleClick(moduleType) {
+            if (!wechatLogin.getCurrentUser()) {
+                alert('请先登录后使用此功能');
+                return;
+            }
+            
+            const permission = wechatLogin.checkPermission('normal');
+            if (!permission.allowed) {
+                alert(permission.reason);
+                return;
+            }
+            
+            // 这里添加具体模块的逻辑
+            console.log('启动模块:', moduleType);
+            
+            // 示例：增加使用次数
+            wechatLogin.incrementUsage(moduleType).then(result => {
+                console.log('使用次数已更新:', result);
+            }).catch(error => {
+                console.error('更新使用次数失败:', error);
+            });
+        }
+
+        // 全局函数，供其他模块调用
+        window.getWeChatLogin = function() {
+            return wechatLogin;
+        };
     </script>
 </body>
 </html>

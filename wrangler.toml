@@ -1,0 +1,15 @@
+name = "wechat-login-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+durable_objects.bindings = [
+  { name = "SESSIONS", class_name = "Session" }
+]
+
+kv_namespaces = [
+  { binding = "WECHAT_KV", id = "bcbeb4be48d742fb96e463898531a7fe" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Session"]

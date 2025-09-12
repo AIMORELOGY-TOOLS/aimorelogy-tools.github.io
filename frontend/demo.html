@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录模块 - 完整演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .demo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .demo-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .login-status {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #07c160;
+        }
+        
+        .status-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .status-content {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .user-info {
+            background: #e8f5e8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        
+        .user-info strong {
+            color: #07c160;
+        }
+        
+        .logout-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #ff3742;
+        }
+        
+        .features-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .features-list li {
+            padding: 8px 0;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .features-list li::before {
+            content: "✅";
+            margin-right: 10px;
+        }
+        
+        .code-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .code-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        
+        .integration-example {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .api-docs {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .api-endpoint {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .method-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .method-get { background: #28a745; color: white; }
+        .method-post { background: #007bff; color: white; }
+        
+        .github-link {
+            display: inline-block;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        .github-link:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 微信登录模块</h1>
+            <p>基于 Cloudflare Workers 的完整微信扫码登录解决方案</p>
+        </div>
+        
+        <div class="demo-grid">
+            <!-- 登录演示 -->
+            <div class="demo-card">
+                <h2>🚀 登录演示</h2>
+                <div class="login-status">
+                    <div class="status-title">当前登录状态</div>
+                    <div class="status-content" id="loginStatus">
+                        未登录 - 点击下方按钮开始登录
+                    </div>
+                </div>
+                
+                <ul class="features-list">
+                    <li>微信公众号扫码登录</li>
+                    <li>实时状态推送</li>
+                    <li>安全的会话管理</li>
+                    <li>响应式界面设计</li>
+                    <li>模块化组件</li>
+                </ul>
+                
+                <!-- 微信登录按钮 -->
+                <button class="wechat-login-btn" onclick="WechatLogin.open()">
+                    <span>微</span>
+                    开始微信登录
+                </button>
+            </div>
+            
+            <!-- 技术特性 -->
+            <div class="demo-card">
+                <h2>⚡ 技术特性</h2>
+                <ul class="features-list">
+                    <li>Cloudflare Workers 边缘计算</li>
+                    <li>Durable Objects 状态管理</li>
+                    <li>WebSocket 实时通信</li>
+                    <li>自定义域名支持</li>
+                    <li>CORS 跨域支持</li>
+                    <li>移动端适配</li>
+                    <li>TypeScript 类型支持</li>
+                    <li>模块化架构设计</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 集成示例 -->
+        <div class="integration-example">
+            <h2>📦 快速集成</h2>
+            
+            <div class="code-section">
+                <h3>1. 引入组件</h3>
+                <div class="code-block">&lt;!-- 在 HTML 中引入 --&gt;
+&lt;script&gt;
+    const API_BASE_URL = 'https://aimorelogybackend.site';
+&lt;/script&gt;
+&lt;script src="wechat-login-component.js"&gt;&lt;/script&gt;</div>
+            </div>
+            
+            <div class="code-section">
+                <h3>2. 添加登录按钮</h3>
+                <div class="code-block">&lt;!-- 登录按钮 --&gt;
+&lt;button onclick="WechatLogin.open()"&gt;微信登录&lt;/button&gt;
+
+&lt;!-- 或使用内置样式的按钮 --&gt;
+&lt;button class="wechat-login-btn" onclick="WechatLogin.open()"&gt;
+    &lt;span&gt;微&lt;/span&gt;
+    微信登录
+&lt;/button&gt;</div>
+            </div>
+            
+            <div class="code-section">
+                <h3>3. 监听登录事件</h3>
+                <div class="code-block">// 监听登录成功事件
+window.addEventListener('wechatLoginSuccess', function(event) {
+    const { token, openid, loginTime } = event.detail;
+    console.log('登录成功:', { token, openid, loginTime });
+    
+    // 处理登录成功逻辑
+    updateUserInterface();
+});
+
+// 监听退出登录事件
+window.addEventListener('wechatLogout', function() {
+    console.log('用户已退出登录');
+    
+    // 处理退出登录逻辑
+    clearUserInterface();
+});</div>
+            </div>
+            
+            <div class="code-section">
+                <h3>4. 检查登录状态</h3>
+                <div class="code-block">// 检查当前登录状态
+const status = WechatLogin.checkStatus();
+
+if (status.isLoggedIn) {
+    console.log('用户已登录:', status.openid);
+    console.log('登录Token:', status.token);
+} else {
+    console.log('用户未登录');
+}
+
+// 手动退出登录
+WechatLogin.logout();</div>
+            </div>
+        </div>
+        
+        <!-- API 文档 -->
+        <div class="api-docs">
+            <h2>📚 API 文档</h2>
+            
+            <div class="api-endpoint">
+                <span class="method-tag method-post">POST</span>
+                <strong>/create_qr</strong>
+                <p>创建微信登录二维码</p>
+                <div class="code-block">// 响应示例
+{
+  "sessionId": "uuid-string",
+  "qrUrl": "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=...",
+  "ticket": "ticket-string",
+  "expireSeconds": 600
+}</div>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method-tag method-get">GET</span>
+                <strong>/poll?id={sessionId}</strong>
+                <p>轮询登录状态</p>
+                <div class="code-block">// 响应示例
+{
+  "status": "scanned", // pending | scanned | success
+  "openid": "user-openid",
+  "timestamp": 1234567890
+}</div>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method-tag method-post">POST</span>
+                <strong>/finalize_login</strong>
+                <p>完成登录流程</p>
+                <div class="code-block">// 请求体
+{
+  "sessionId": "uuid-string"
+}
+
+// 响应示例
+{
+  "success": true,
+  "token": "login-token",
+  "openid": "user-openid",
+  "loginTime": "2024-01-01T00:00:00.000Z"
+}</div>
+            </div>
+            
+            <div class="api-endpoint">
+                <span class="method-tag method-post">POST</span>
+                <strong>/wechat-callback</strong>
+                <p>微信服务器回调接口（内部使用）</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="https://github.com/Jeff010726/AIMORELOGY-TOOLS" class="github-link" target="_blank">
+                📖 查看完整文档
+            </a>
+            <a href="https://github.com/Jeff010726/AIMORELOGY-TOOLS" class="github-link" target="_blank">
+                ⭐ GitHub 源码
+            </a>
+        </div>
+    </div>
+
+    <!-- 引入微信登录组件 -->
+    <script>
+        // 配置后端 API 地址
+        const API_BASE_URL = 'https://aimorelogybackend.site';
+    </script>
+    <script src="wechat-login-component.js"></script>
+    
+    <script>
+        // 页面加载时检查登录状态
+        window.addEventListener('load', function() {
+            updateLoginStatus();
+        });
+        
+        // 监听登录成功事件
+        window.addEventListener('wechatLoginSuccess', function(event) {
+            console.log('登录成功:', event.detail);
+            updateLoginStatus();
+            
+            // 显示成功提示
+            showNotification('登录成功！', 'success');
+        });
+        
+        // 监听退出登录事件
+        window.addEventListener('wechatLogout', function() {
+            console.log('已退出登录');
+            updateLoginStatus();
+            
+            // 显示退出提示
+            showNotification('已退出登录', 'info');
+        });
+        
+        // 更新登录状态显示
+        function updateLoginStatus() {
+            const status = WechatLogin.checkStatus();
+            const statusElement = document.getElementById('loginStatus');
+            
+            if (status.isLoggedIn) {
+                statusElement.innerHTML = `
+                    <div class="user-info">
+                        <div><strong>登录状态:</strong> ✅ 已登录</div>
+                        <div><strong>OpenID:</strong> ${status.openid}</div>
+                        <div><strong>登录时间:</strong> ${new Date(status.loginTime).toLocaleString()}</div>
+                        <div><strong>Token:</strong> ${status.token.substring(0, 20)}...</div>
+                        <button class="logout-btn" onclick="WechatLogin.logout()">退出登录</button>
+                    </div>
+                `;
+            } else {
+                statusElement.textContent = '❌ 未登录 - 点击下方按钮开始登录';
+            }
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#07c160' : type === 'error' ? '#ff4757' : '#007bff'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10001;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            // 添加动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

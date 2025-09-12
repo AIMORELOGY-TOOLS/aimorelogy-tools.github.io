@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI文章生成平台 - 微信登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .logo {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .wechat-login-container {
+            margin: 20px 0;
+        }
+
+        .features {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .feature-icon {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 0.8em;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖</div>
+        <h1>AI文章生成平台</h1>
+        <p class="subtitle">使用微信扫码登录，开始您的AI创作之旅</p>
+        
+        <div class="wechat-login-container">
+            <div id="wechat-login"></div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">✨</span>
+                <span>AI智能文章生成</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🔒</span>
+                <span>安全的微信登录</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <span>响应式设计</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">⚡</span>
+                <span>快速部署</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>模块化设计 · 易于集成 · 开源免费</p>
+        </div>
+    </div>
+
+    <script>
+        // 配置后端 API 地址 - 使用你的自定义域名
+        window.WECHAT_LOGIN_CONFIG = {
+            apiBaseUrl: 'https://aimorelogybackend.site',
+            onLoginSuccess: function(userInfo, token) {
+                console.log('登录成功:', userInfo);
+                alert(`欢迎 ${userInfo.nickname}！登录成功，即将跳转到主页面...`);
+                
+                // 这里可以跳转到你的主应用页面
+                // window.location.href = '/dashboard.html';
+                
+                // 或者显示用户信息
+                showUserInfo(userInfo, token);
+            },
+            onLoginError: function(error) {
+                console.error('登录失败:', error);
+                alert('登录失败，请重试');
+            }
+        };
+
+        function showUserInfo(userInfo, token) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div class="logo">✅</div>
+                <h1>登录成功</h1>
+                <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: left;">
+                    <p><strong>昵称:</strong> ${userInfo.nickname}</p>
+                    <p><strong>OpenID:</strong> ${userInfo.openid}</p>
+                    <p><strong>Token:</strong> ${token.substring(0, 20)}...</p>
+                </div>
+                <button onclick="location.reload()" style="
+                    background: #667eea;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">重新登录</button>
+            `;
+        }
+    </script>
+    
+    <!-- 引入微信登录组件 -->
+    <script src="wechat-login-component.js"></script>
+    
+    <script>
+        // 初始化微信登录组件
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginContainer = document.getElementById('wechat-login');
+            if (loginContainer && window.WeChatLogin) {
+                new window.WeChatLogin(loginContainer, window.WECHAT_LOGIN_CONFIG);
+            }
+        });
+    </script>
+</body>
+</html>

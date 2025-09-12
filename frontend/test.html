@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #07c160;
+            padding-bottom: 10px;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .status-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .log-area {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>🧪 微信登录功能测试</h1>
+    
+    <!-- 基础功能测试 -->
+    <div class="test-section">
+        <h2>1. 基础功能测试</h2>
+        <button class="test-button" onclick="testCheckStatus()">检查登录状态</button>
+        <button class="test-button" onclick="testOpenLogin()">打开登录弹窗</button>
+        <button class="test-button" onclick="testCloseLogin()">关闭登录弹窗</button>
+        <button class="test-button" onclick="testLogout()">退出登录</button>
+        
+        <div class="status-display" id="basicTestResult">
+            点击上方按钮进行测试...
+        </div>
+    </div>
+    
+    <!-- API 连接测试 -->
+    <div class="test-section">
+        <h2>2. API 连接测试</h2>
+        <button class="test-button" onclick="testCreateQR()">测试创建二维码</button>
+        <button class="test-button" onclick="testPollStatus()">测试状态轮询</button>
+        <button class="test-button" onclick="testFinalizeLogin()">测试完成登录</button>
+        
+        <div class="status-display" id="apiTestResult">
+            点击上方按钮进行 API 测试...
+        </div>
+    </div>
+    
+    <!-- 事件监听测试 -->
+    <div class="test-section">
+        <h2>3. 事件监听测试</h2>
+        <button class="test-button" onclick="triggerLoginSuccess()">模拟登录成功事件</button>
+        <button class="test-button" onclick="triggerLogout()">模拟退出登录事件</button>
+        
+        <div class="status-display" id="eventTestResult">
+            事件监听器已就绪，等待事件触发...
+        </div>
+    </div>
+    
+    <!-- 完整登录流程测试 -->
+    <div class="test-section">
+        <h2>4. 完整登录流程</h2>
+        <button class="wechat-login-btn" onclick="WechatLogin.open()">
+            <span>微</span>
+            开始完整登录测试
+        </button>
+        
+        <div class="status-display" id="fullTestResult">
+            点击上方按钮开始完整的登录流程测试...
+        </div>
+    </div>
+    
+    <!-- 日志显示 -->
+    <div class="test-section">
+        <h2>5. 测试日志</h2>
+        <button class="test-button" onclick="clearLog()">清空日志</button>
+        <div class="log-area" id="testLog">测试日志将显示在这里...\n</div>
+    </div>
+
+    <!-- 引入微信登录组件 -->
+    <script>
+        const API_BASE_URL = 'https://aimorelogybackend.site';
+    </script>
+    <script src="wechat-login-component.js"></script>
+    
+    <script>
+        // 日志函数
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logArea.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').textContent = '测试日志已清空...\n';
+        }
+        
+        // 基础功能测试
+        function testCheckStatus() {
+            try {
+                const status = WechatLogin.checkStatus();
+                const result = document.getElementById('basicTestResult');
+                
+                if (status.isLoggedIn) {
+                    result.innerHTML = `
+                        <strong>✅ 已登录</strong><br>
+                        OpenID: ${status.openid}<br>
+                        Token: ${status.token.substring(0, 20)}...<br>
+                        登录时间: ${new Date(status.loginTime).toLocaleString()}
+                    `;
+                    result.className = 'status-display success';
+                    log('检查登录状态: 已登录', 'success');
+                } else {
+                    result.innerHTML = '<strong>❌ 未登录</strong>';
+                    result.className = 'status-display warning';
+                    log('检查登录状态: 未登录', 'warning');
+                }
+            } catch (error) {
+                log(`检查登录状态失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function testOpenLogin() {
+            try {
+                WechatLogin.open();
+                document.getElementById('basicTestResult').innerHTML = '<strong>✅ 登录弹窗已打开</strong>';
+                document.getElementById('basicTestResult').className = 'status-display success';
+                log('打开登录弹窗: 成功', 'success');
+            } catch (error) {
+                log(`打开登录弹窗失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function testCloseLogin() {
+            try {
+                WechatLogin.close();
+                document.getElementById('basicTestResult').innerHTML = '<strong>✅ 登录弹窗已关闭</strong>';
+                document.getElementById('basicTestResult').className = 'status-display success';
+                log('关闭登录弹窗: 成功', 'success');
+            } catch (error) {
+                log(`关闭登录弹窗失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function testLogout() {
+            try {
+                WechatLogin.logout();
+                document.getElementById('basicTestResult').innerHTML = '<strong>✅ 已退出登录</strong>';
+                document.getElementById('basicTestResult').className = 'status-display success';
+                log('退出登录: 成功', 'success');
+            } catch (error) {
+                log(`退出登录失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // API 测试
+        async function testCreateQR() {
+            const result = document.getElementById('apiTestResult');
+            result.innerHTML = '<strong>🔄 正在测试创建二维码...</strong>';
+            result.className = 'status-display';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/create_qr`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.sessionId && data.qrUrl) {
+                    result.innerHTML = `
+                        <strong>✅ 创建二维码成功</strong><br>
+                        Session ID: ${data.sessionId}<br>
+                        过期时间: ${data.expireSeconds}秒
+                    `;
+                    result.className = 'status-display success';
+                    log('API测试 - 创建二维码: 成功', 'success');
+                } else {
+                    throw new Error(data.error || '返回数据格式错误');
+                }
+            } catch (error) {
+                result.innerHTML = `<strong>❌ 创建二维码失败</strong><br>${error.message}`;
+                result.className = 'status-display error';
+                log(`API测试 - 创建二维码失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPollStatus() {
+            const result = document.getElementById('apiTestResult');
+            result.innerHTML = '<strong>🔄 正在测试状态轮询...</strong>';
+            result.className = 'status-display';
+            
+            try {
+                // 使用一个测试用的 session ID
+                const testSessionId = 'test-session-id';
+                const response = await fetch(`${API_BASE_URL}/poll?id=${testSessionId}`);
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <strong>✅ 状态轮询成功</strong><br>
+                    状态: ${data.status || 'pending'}<br>
+                    响应时间: ${new Date().toLocaleTimeString()}
+                `;
+                result.className = 'status-display success';
+                log('API测试 - 状态轮询: 成功', 'success');
+            } catch (error) {
+                result.innerHTML = `<strong>❌ 状态轮询失败</strong><br>${error.message}`;
+                result.className = 'status-display error';
+                log(`API测试 - 状态轮询失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFinalizeLogin() {
+            const result = document.getElementById('apiTestResult');
+            result.innerHTML = '<strong>🔄 正在测试完成登录...</strong>';
+            result.className = 'status-display';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/finalize_login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: 'test-session-id' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success === false) {
+                    result.innerHTML = `
+                        <strong>⚠️ 完成登录接口正常</strong><br>
+                        返回: ${data.error || '登录未完成'}<br>
+                        (这是正常的，因为使用了测试 Session ID)
+                    `;
+                    result.className = 'status-display warning';
+                    log('API测试 - 完成登录接口: 正常响应', 'success');
+                } else {
+                    result.innerHTML = `<strong>✅ 完成登录成功</strong><br>Token: ${data.token}`;
+                    result.className = 'status-display success';
+                    log('API测试 - 完成登录: 成功', 'success');
+                }
+            } catch (error) {
+                result.innerHTML = `<strong>❌ 完成登录失败</strong><br>${error.message}`;
+                result.className = 'status-display error';
+                log(`API测试 - 完成登录失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 事件测试
+        function triggerLoginSuccess() {
+            const event = new CustomEvent('wechatLoginSuccess', {
+                detail: {
+                    token: 'test-token-' + Date.now(),
+                    openid: 'test-openid',
+                    loginTime: new Date().toISOString()
+                }
+            });
+            window.dispatchEvent(event);
+            log('触发登录成功事件: 完成', 'success');
+        }
+        
+        function triggerLogout() {
+            const event = new CustomEvent('wechatLogout');
+            window.dispatchEvent(event);
+            log('触发退出登录事件: 完成', 'success');
+        }
+        
+        // 事件监听器
+        window.addEventListener('wechatLoginSuccess', function(event) {
+            const result = document.getElementById('eventTestResult');
+            result.innerHTML = `
+                <strong>✅ 登录成功事件已触发</strong><br>
+                Token: ${event.detail.token}<br>
+                OpenID: ${event.detail.openid}<br>
+                时间: ${new Date(event.detail.loginTime).toLocaleString()}
+            `;
+            result.className = 'status-display success';
+            log('事件监听 - 登录成功: 已接收', 'success');
+        });
+        
+        window.addEventListener('wechatLogout', function() {
+            const result = document.getElementById('eventTestResult');
+            result.innerHTML = '<strong>✅ 退出登录事件已触发</strong>';
+            result.className = 'status-display success';
+            log('事件监听 - 退出登录: 已接收', 'success');
+        });
+        
+        // 页面加载完成
+        window.addEventListener('load', function() {
+            log('测试页面加载完成', 'success');
+            log(`API 地址: ${API_BASE_URL}`, 'info');
+            log(`微信登录组件版本: ${WechatLogin.version || '未知'}`, 'info');
+            
+            // 自动检查登录状态
+            setTimeout(testCheckStatus, 1000);
+        });
+    </script>
+</body>
+</html>

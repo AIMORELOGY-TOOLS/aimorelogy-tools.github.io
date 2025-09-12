@@ -161,6 +161,13 @@ class WeChatLoginModule {
                         color: #333;
                     }
                     
+                    .user-id {
+                        font-size: 12px;
+                        color: #666;
+                        margin-bottom: 4px;
+                        font-family: monospace;
+                    }
+                    
                     .user-level {
                         display: inline-block;
                         padding: 2px 8px;
@@ -207,6 +214,7 @@ class WeChatLoginModule {
                 
                 <div class="user-details">
                     <div class="user-name">${user.nickname}</div>
+                    <div class="user-id">用户ID: ${user.userid || user.openid}</div>
                     <div>
                         <span class="user-level">${levelInfo.name}</span>
                         <span class="user-usage">今日使用: ${user.usage ? user.usage.daily : 0}/${levelInfo.dailyLimit === -1 ? '∞' : levelInfo.dailyLimit}</span>

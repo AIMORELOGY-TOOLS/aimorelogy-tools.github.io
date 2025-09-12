@@ -37,6 +37,18 @@ export default {
         return await handleTestCreateUser(request, env);
       } else if (url.pathname === '/ws') {
         return await handleWsUpgrade(request, env);
+      } else if (url.pathname === '/health') {
+        return await handleHealthCheck(request);
+      } else if (url.pathname === '/admin/list_all_keys') {
+        return await handleAdminListKeys(request, env);
+      } else if (url.pathname === '/admin/get_user') {
+        return await handleAdminGetUser(request, env);
+      } else if (url.pathname === '/admin/update_user') {
+        return await handleAdminUpdateUser(request, env);
+      } else if (url.pathname === '/admin/delete_user') {
+        return await handleAdminDeleteUser(request, env);
+      } else if (url.pathname === '/admin/clear_all_users') {
+        return await handleAdminClearAllUsers(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -157,6 +169,106 @@ async function handleWechatEvent(request, env, ctx) {
   }
 }
 
+// 获取微信用户基本信息
+async function getWechatUserInfo(env, openid) {
+  try {
+    // 获取访问令牌
+    const accessToken = await getWechatAccessToken(env);
+    if (!accessToken) {
+      console.error('无法获取微信访问令牌');
+      return null;
+    }
+
+    // 调用微信API获取用户基本信息
+    const apiUrl = `https://api.weixin.qq.com/cgi-bin/user/info?access_token=${accessToken}&openid=${openid}&lang=zh_CN`;
+    
+    console.log('调用微信用户信息API:', apiUrl);
+    const response = await fetch(apiUrl);
+    const userInfo = await response.json();
+    
+    console.log('微信用户信息响应:', userInfo);
+    
+    if (userInfo.errcode) {
+      console.error('获取微信用户信息失败:', userInfo.errmsg);
+      return null;
+    }
+    
+    return {
+      openid: userInfo.openid,
+      nickname: userInfo.nickname || '',
+      sex: userInfo.sex || 0,
+      province: userInfo.province || '',
+      city: userInfo.city || '',
+      country: userInfo.country || '',
+      headimgurl: userInfo.headimgurl || '',
+      subscribe_time: userInfo.subscribe_time || 0,
+      unionid: userInfo.unionid || '',
+      remark: userInfo.remark || '',
+      groupid: userInfo.groupid || 0,
+      tagid_list: userInfo.tagid_list || [],
+      subscribe_scene: userInfo.subscribe_scene || '',
+      qr_scene: userInfo.qr_scene || 0,
+      qr_scene_str: userInfo.qr_scene_str || ''
+    };
+  } catch (error) {
+    console.error('获取微信用户信息异常:', error);
+    return null;
+  }
+}
+
+// 生成唯一的用户ID
+async function generateUniqueUserId(env, nickname, openid) {
+  try {
+    // 如果没有昵称，使用openid后6位
+    if (!nickname || nickname.trim() === '') {
+      return `用户${openid.slice(-6)}`;
+    }
+    
+    // 清理昵称，移除特殊字符
+    const cleanNickname = nickname.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    if (cleanNickname === '') {
+      return `用户${openid.slice(-6)}`;
+    }
+    
+    // 检查昵称是否已存在
+    const allUsers = await env.WECHAT_KV.list({ prefix: 'user:' });
+    const existingUserIds = new Set();
+    
+    for (const key of allUsers.keys) {
+      try {
+        const userData = await env.WECHAT_KV.get(key.name);
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.userid) {
+            existingUserIds.add(user.userid);
+          }
+        }
+      } catch (error) {
+        console.error('读取用户数据失败:', error);
+      }
+    }
+    
+    // 如果昵称不重复，直接使用
+    if (!existingUserIds.has(cleanNickname)) {
+      return cleanNickname;
+    }
+    
+    // 如果昵称重复，添加编号
+    let counter = 1;
+    let uniqueUserId = `${cleanNickname}${counter}`;
+    
+    while (existingUserIds.has(uniqueUserId)) {
+      counter++;
+      uniqueUserId = `${cleanNickname}${counter}`;
+    }
+    
+    return uniqueUserId;
+  } catch (error) {
+    console.error('生成唯一用户ID失败:', error);
+    return `用户${openid.slice(-6)}`;
+  }
+}
+
 // 异步处理登录事件
 async function processLoginEvent(env, fromUser, event, eventKey) {
   try {
@@ -171,6 +283,10 @@ async function processLoginEvent(env, fromUser, event, eventKey) {
     if (sessionId && fromUser) {
       console.log(`处理登录事件: 用户=${fromUser}, 会话=${sessionId}`);
       
+      // 获取微信用户基本信息
+      const wechatUserInfo = await getWechatUserInfo(env, fromUser);
+      console.log('获取到的微信用户信息:', wechatUserInfo);
+      
       const objId = env.SESSIONS.idFromName(`session:${sessionId}`);
       const sessionObj = env.SESSIONS.get(objId);
       
@@ -181,7 +297,8 @@ async function processLoginEvent(env, fromUser, event, eventKey) {
           type: 'scan',
           openid: fromUser,
           sessionId: sessionId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          wechatUserInfo: wechatUserInfo // 传递微信用户信息
         })
       });
       
@@ -311,9 +428,10 @@ async function handleFinalizeLogin(request, env) {
     
     if ((data.status === 'scanned' || data.status === 'success') && data.openid) {
       console.log('开始处理登录完成，openid:', data.openid);
+      console.log('会话数据:', data);
       
-      // 获取或创建用户信息
-      const userInfo = await getOrCreateUser(env, data.openid);
+      // 获取或创建用户信息，传递微信用户信息
+      const userInfo = await getOrCreateUser(env, data.openid, data.wechatUserInfo);
       console.log('用户信息创建/获取完成:', userInfo);
       
       // 生成登录 token
@@ -328,6 +446,7 @@ async function handleFinalizeLogin(request, env) {
         success: true,
         token: token,
         openid: data.openid,
+        userid: userInfo.userid, // 返回用户ID
         loginTime: loginTime,
         userInfo: userInfo
       }), {
@@ -906,21 +1025,54 @@ async function handleCheckPermission(request, env) {
 }
 
 // 获取或创建用户
-async function getOrCreateUser(env, openid) {
+async function getOrCreateUser(env, openid, wechatUserInfo = null) {
   try {
     const userKey = `user:${openid}`;
     const existingUser = await env.WECHAT_KV.get(userKey);
     
     if (existingUser) {
-      return JSON.parse(existingUser);
+      const user = JSON.parse(existingUser);
+      
+      // 如果是现有用户但没有userid，为其生成userid
+      if (!user.userid && wechatUserInfo) {
+        const userid = await generateUniqueUserId(env, wechatUserInfo.nickname, openid);
+        user.userid = userid;
+        
+        // 更新用户信息
+        if (wechatUserInfo.nickname) user.nickname = wechatUserInfo.nickname;
+        if (wechatUserInfo.headimgurl) user.avatar = wechatUserInfo.headimgurl;
+        
+        await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+        console.log(`为现有用户 ${openid} 生成userid: ${userid}`);
+      }
+      
+      return user;
     }
     
     // 创建新用户
+    let nickname = `用户${openid.slice(-6)}`;
+    let avatar = '';
+    let userid = nickname;
+    
+    // 如果有微信用户信息，使用真实信息
+    if (wechatUserInfo) {
+      if (wechatUserInfo.nickname) {
+        nickname = wechatUserInfo.nickname;
+      }
+      if (wechatUserInfo.headimgurl) {
+        avatar = wechatUserInfo.headimgurl;
+      }
+      
+      // 生成唯一的userid
+      userid = await generateUniqueUserId(env, wechatUserInfo.nickname, openid);
+    }
+    
     const newUser = {
       openid: openid,
+      userid: userid, // 新增：唯一用户ID
       level: 'normal', // 默认等级：普通用户
-      nickname: `用户${openid.slice(-6)}`, // 默认昵称
-      avatar: '', // 头像URL
+      nickname: nickname, // 真实昵称或默认昵称
+      avatar: avatar, // 头像URL
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       usage: {
@@ -928,11 +1080,13 @@ async function getOrCreateUser(env, openid) {
         daily: 0,
         lastResetDate: new Date().toISOString().split('T')[0]
       },
-      limits: getUserLimits('normal')
+      limits: getUserLimits('normal'),
+      // 保存完整的微信用户信息（可选）
+      wechatInfo: wechatUserInfo || null
     };
     
     await env.WECHAT_KV.put(userKey, JSON.stringify(newUser));
-    console.log('创建新用户:', openid);
+    console.log(`创建新用户: openid=${openid}, userid=${userid}, nickname=${nickname}`);
     
     return newUser;
   } catch (error) {
@@ -1107,6 +1261,388 @@ function extractOpenidFromToken(token) {
   } catch (error) {
     console.error('解析token失败:', error);
     return null;
+  }
+}
+
+// 健康检查端点
+async function handleHealthCheck(request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  return new Response(JSON.stringify({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'wechat-login-worker'
+  }), {
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders
+    }
+  });
+}
+
+// 管理员API：获取所有KV键
+async function handleAdminListKeys(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    console.log('管理员请求：获取所有KV键');
+    
+    // 获取所有键
+    const keys = await env.WECHAT_KV.list();
+    
+    console.log('KV键列表:', keys);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      keys: keys.keys,
+      total: keys.keys.length,
+      list_complete: keys.list_complete
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error('获取KV键失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 管理员API：获取用户数据
+async function handleAdminGetUser(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const url = new URL(request.url);
+    const key = url.searchParams.get('key');
+    
+    if (!key) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少key参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    console.log('管理员请求：获取用户数据', key);
+    
+    const userData = await env.WECHAT_KV.get(key);
+    
+    if (!userData) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户不存在'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const user = JSON.parse(userData);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      user: user
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error('获取用户数据失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 管理员API：更新用户数据
+async function handleAdminUpdateUser(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { 
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  try {
+    const { openid, updates } = await request.json();
+    
+    if (!openid || !updates) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少必要参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    console.log('管理员请求：更新用户数据', openid, updates);
+    
+    // 获取现有用户数据
+    const key = `user:${openid}`;
+    const existingData = await env.WECHAT_KV.get(key);
+    
+    if (!existingData) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户不存在'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    const user = JSON.parse(existingData);
+    
+    // 更新用户数据
+    if (updates.nickname !== undefined) {
+      user.nickname = updates.nickname;
+    }
+    
+    if (updates.level !== undefined) {
+      user.level = updates.level;
+      // 更新等级限制
+      user.limits = getUserLimits(updates.level);
+    }
+    
+    // 保存更新后的数据
+    await env.WECHAT_KV.put(key, JSON.stringify(user));
+    
+    return new Response(JSON.stringify({
+      success: true,
+      user: user
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error('更新用户数据失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 管理员API：删除用户
+async function handleAdminDeleteUser(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (request.method !== 'DELETE') {
+    return new Response('Method Not Allowed', { 
+      status: 405,
+      headers: corsHeaders
+    });
+  }
+
+  try {
+    const { openid } = await request.json();
+    
+    if (!openid) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少openid参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    console.log('管理员请求：删除用户', openid);
+    
+    const key = `user:${openid}`;
+    
+    // 检查用户是否存在
+    const existingData = await env.WECHAT_KV.get(key);
+    if (!existingData) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户不存在'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 删除用户数据
+    await env.WECHAT_KV.delete(key);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: '用户删除成功'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error('删除用户失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 清除所有用户数据
+async function handleAdminClearAllUsers(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '只支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    console.log('开始清除所有用户数据...');
+    
+    // 获取所有用户键
+    const listResult = await env.WECHAT_KV.list({ prefix: 'user:' });
+    const userKeys = listResult.keys.map(key => key.name);
+    
+    console.log(`找到 ${userKeys.length} 个用户记录`);
+    
+    // 批量删除用户数据
+    let deletedCount = 0;
+    for (const key of userKeys) {
+      try {
+        await env.WECHAT_KV.delete(key);
+        deletedCount++;
+        console.log(`删除用户: ${key}`);
+      } catch (error) {
+        console.error(`删除用户 ${key} 失败:`, error);
+      }
+    }
+    
+    // 也清除测试数据
+    const testKeys = await env.WECHAT_KV.list({ prefix: 'test:' });
+    for (const key of testKeys.keys) {
+      try {
+        await env.WECHAT_KV.delete(key.name);
+        console.log(`删除测试数据: ${key.name}`);
+      } catch (error) {
+        console.error(`删除测试数据 ${key.name} 失败:`, error);
+      }
+    }
+    
+    console.log(`清除完成，共删除 ${deletedCount} 个用户记录`);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: `成功清除 ${deletedCount} 个用户记录`,
+      deletedCount: deletedCount,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  } catch (error) {
+    console.error('清除用户数据失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
   }
 }
 

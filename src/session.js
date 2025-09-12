@@ -126,12 +126,13 @@ export class Session {
       console.log('Received scan notification:', data);
       
       if (data.type === 'scan' && data.openid && data.sessionId) {
-        // 更新会话数据 - 直接设置为成功状态
+        // 更新会话数据 - 直接设置为成功状态，包含微信用户信息
         this.sessionData = {
           status: 'success',
           openid: data.openid,
           sessionId: data.sessionId,
-          timestamp: data.timestamp || Date.now()
+          timestamp: data.timestamp || Date.now(),
+          wechatUserInfo: data.wechatUserInfo || null // 存储微信用户信息
         };
         
         // 持久化到存储
@@ -143,7 +144,7 @@ export class Session {
           data: this.sessionData
         });
         
-        console.log('Session updated:', this.sessionData);
+        console.log('Session updated with wechat user info:', this.sessionData);
         
         return new Response(JSON.stringify({ success: true }), {
           headers: { 'Content-Type': 'application/json' }

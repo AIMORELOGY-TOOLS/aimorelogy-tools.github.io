@@ -722,22 +722,34 @@ class ArticleGeneratorModule {
     // 更新使用次数
     async updateUsageCount() {
         try {
+            console.log('开始更新使用次数...');
+            console.log('当前用户token:', this.currentUser.token);
+            console.log('API地址:', `${this.config.apiBaseUrl}/update_article_usage`);
+            
+            const requestBody = {
+                token: this.currentUser.token,
+                action: 'article_generation',
+                amount: 1
+            };
+            console.log('请求体:', requestBody);
+            
             const response = await fetch(`${this.config.apiBaseUrl}/update_article_usage`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.currentUser.token}`
                 },
-                body: JSON.stringify({
-                    token: this.currentUser.token,
-                    action: 'article_generation',
-                    amount: 1
-                })
+                body: JSON.stringify(requestBody)
             });
             
+            console.log('响应状态:', response.status);
+            console.log('响应头:', response.headers);
+            
             const data = await response.json();
+            console.log('响应数据:', data);
             
             if (data.success) {
+                console.log('使用次数更新成功，新的使用统计:', data.usage);
                 // 更新本地用户信息
                 this.currentUser.articleUsage = data.usage;
                 this.updateUsageInfo();
@@ -747,6 +759,9 @@ class ArticleGeneratorModule {
                     detail: { usage: data.usage }
                 });
                 document.dispatchEvent(event);
+                console.log('已触发用户使用信息更新事件');
+            } else {
+                console.error('使用次数更新失败:', data.error);
             }
         } catch (error) {
             console.error('更新使用次数失败:', error);

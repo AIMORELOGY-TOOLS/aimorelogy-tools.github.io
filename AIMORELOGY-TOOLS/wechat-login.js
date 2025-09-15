@@ -18,6 +18,9 @@ class WeChatLoginModule {
         
         console.log('WeChatLoginModule构造函数被调用');
         
+        // 监听使用次数更新事件
+        this.setupUsageUpdateListener();
+        
         // 立即检查登录状态
         setTimeout(() => {
             this.checkLoginStatus().catch(error => {
@@ -889,6 +892,32 @@ class WeChatLoginModule {
             console.error('获取使用统计失败:', error);
             throw error;
         }
+    }
+
+    // 设置使用次数更新监听器
+    setupUsageUpdateListener() {
+        document.addEventListener('userUsageUpdated', (event) => {
+            console.log('收到使用次数更新事件:', event.detail);
+            if (this.currentUser && event.detail.usage) {
+                // 更新当前用户的使用统计
+                if (event.detail.usage.daily !== undefined) {
+                    if (!this.currentUser.articleUsage) {
+                        this.currentUser.articleUsage = {};
+                    }
+                    this.currentUser.articleUsage = event.detail.usage;
+                    
+                    // 更新本地存储
+                    localStorage.setItem(this.config.storageKey, JSON.stringify(this.currentUser));
+                    
+                    // 重新渲染用户信息显示
+                    if (this.container) {
+                        this.render(this.container, true);
+                    }
+                    
+                    console.log('用户使用次数已同步更新:', this.currentUser.articleUsage);
+                }
+            }
+        });
     }
 
     // 登录状态变化回调 - 可被外部重写

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token统计修复测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Token统计功能修复测试</h1>
+    
+    <div class="test-section info">
+        <h3>测试说明</h3>
+        <p>此页面用于测试token统计功能是否正常工作：</p>
+        <ul>
+            <li>检查用户数据中是否包含tokenUsage字段</li>
+            <li>测试token计算逻辑（中文0.6，英文0.3）</li>
+            <li>验证后端是否正确保存token数据</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Token计算测试</h3>
+        <p>测试文本：<input type="text" id="testText" value="Hello世界！这是一个测试123" style="width: 300px;"></p>
+        <button onclick="testTokenCalculation()">计算Token</button>
+        <div id="tokenResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 用户数据检查</h3>
+        <button onclick="checkUserData()">检查用户tokenUsage字段</button>
+        <div id="userDataResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 模拟文章生成请求</h3>
+        <button onclick="simulateArticleGeneration()">模拟文章生成（测试token统计）</button>
+        <div id="simulationResult"></div>
+    </div>
+
+    <script>
+        // Token计算测试
+        function testTokenCalculation() {
+            const text = document.getElementById('testText').value;
+            const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+            const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+            const otherChars = text.length - chineseChars - englishChars;
+            
+            const estimatedTokens = Math.ceil(
+                chineseChars * 0.6 + 
+                englishChars * 0.3 + 
+                otherChars * 0.5
+            );
+            
+            document.getElementById('tokenResult').innerHTML = `
+                <div class="success">
+                    <h4>Token计算结果：</h4>
+                    <p>文本：${text}</p>
+                    <p>总长度：${text.length} 字符</p>
+                    <p>中文字符：${chineseChars} × 0.6 = ${(chineseChars * 0.6).toFixed(1)}</p>
+                    <p>英文字符：${englishChars} × 0.3 = ${(englishChars * 0.3).toFixed(1)}</p>
+                    <p>其他字符：${otherChars} × 0.5 = ${(otherChars * 0.5).toFixed(1)}</p>
+                    <p><strong>估算Token总数：${estimatedTokens}</strong></p>
+                </div>
+            `;
+        }
+
+        // 检查用户数据
+        async function checkUserData() {
+            try {
+                const response = await fetch('https://wechat-login-worker.internal-articleno.workers.dev/admin/get_user?key=user:oEbjz1xSWO69Xfu0aK55vmnHWwdY&adminToken=admin_secret_token');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const user = data.user;
+                    const hasTokenUsage = user.tokenUsage ? true : false;
+                    
+                    document.getElementById('userDataResult').innerHTML = `
+                        <div class="${hasTokenUsage ? 'success' : 'error'}">
+                            <h4>用户数据检查结果：</h4>
+                            <p>tokenUsage字段存在：${hasTokenUsage ? '✅ 是' : '❌ 否'}</p>
+                            ${hasTokenUsage ? `
+                                <p>文章Token统计：</p>
+                                <ul>
+                                    <li>今日消耗：${user.tokenUsage.article?.daily || 0}</li>
+                                    <li>总计消耗：${user.tokenUsage.article?.total || 0}</li>
+                                    <li>最后更新：${user.tokenUsage.article?.lastResetDate || '未知'}</li>
+                                </ul>
+                            ` : '<p>需要用户重新使用文章生成功能来初始化tokenUsage字段</p>'}
+                            <details>
+                                <summary>完整用户数据</summary>
+                                <pre>${JSON.stringify(user, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('userDataResult').innerHTML = `
+                        <div class="error">
+                            <h4>获取用户数据失败：</h4>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('userDataResult').innerHTML = `
+                    <div class="error">
+                        <h4>请求失败：</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 模拟文章生成请求
+        async function simulateArticleGeneration() {
+            try {
+                // 模拟token消耗
+                const testTokens = 150;
+                
+                const response = await fetch('https://wechat-login-worker.internal-articleno.workers.dev/update_article_usage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: 'b0VianoxeFNXTzY5WGZ1MGFLNTV2bW5IV3dkWToxNzU3OTA4NjM4MjQzOjI0YTJhNDI3LTcxMjAtNGE4OC05MDc4LTdhYjYzMWQwNTVjMQ==', // 使用实际用户token
+                        action: 'article_generation',
+                        amount: 1,
+                        tokenConsumed: testTokens
+                    })
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('simulationResult').innerHTML = `
+                    <div class="${data.success ? 'success' : 'error'}">
+                        <h4>模拟请求结果：</h4>
+                        <p>状态：${data.success ? '✅ 成功' : '❌ 失败'}</p>
+                        <p>消息：${data.message || data.error}</p>
+                        ${data.success ? `
+                            <p>文章使用统计：今日 ${data.usage?.daily || 0} / 总计 ${data.usage?.total || 0}</p>
+                            <p>Token使用统计：今日 ${data.tokenUsage?.article?.daily || 0} / 总计 ${data.tokenUsage?.article?.total || 0}</p>
+                        ` : ''}
+                        <details>
+                            <summary>完整响应数据</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('simulationResult').innerHTML = `
+                    <div class="error">
+                        <h4>模拟请求失败：</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 页面加载时自动运行token计算测试
+        window.onload = function() {
+            testTokenCalculation();
+        };
+    </script>
+</body>
+</html>

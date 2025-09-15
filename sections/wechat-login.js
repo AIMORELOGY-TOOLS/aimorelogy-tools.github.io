@@ -4,7 +4,7 @@
 class WeChatLoginModule {
     constructor(options = {}) {
         this.config = {
-            apiBaseUrl: 'https://aimorelogybackend.site',
+            apiBaseUrl: 'https://wechat-login-worker.internal-articleno.workers.dev',
             pollInterval: 2000,
             qrExpireTime: 600000,
             storageKey: 'wechat_user_info',

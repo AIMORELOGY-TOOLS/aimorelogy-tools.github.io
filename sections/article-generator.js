@@ -4,7 +4,7 @@
 class ArticleGeneratorModule {
     constructor(options = {}) {
         this.config = {
-            apiBaseUrl: 'https://aimorelogybackend.site',
+            apiBaseUrl: 'https://wechat-login-worker.internal-articleno.workers.dev',
             deepseekApiKey: 'sk-bfb1a4a3455940aa97488e61bf6ee924',
             deepseekBaseUrl: 'https://api.deepseek.com/v1',
             model: 'deepseek-chat',

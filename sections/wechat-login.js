@@ -572,7 +572,12 @@ class WeChatLoginModule {
     // 生成二维码
     async generateQRCode(modal) {
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/generate_qr`);
+            const response = await fetch(`${this.config.apiBaseUrl}/create_qr`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             const data = await response.json();
             
             if (data.success) {
@@ -580,7 +585,7 @@ class WeChatLoginModule {
                 
                 // 显示二维码
                 const qrContainer = modal.querySelector('.qr-code');
-                qrContainer.innerHTML = `<img src="${data.qrCodeUrl}" alt="微信登录二维码" style="width: 100%; height: 100%; object-fit: contain;">`;
+                qrContainer.innerHTML = `<img src="${data.qrUrl}" alt="微信登录二维码" style="width: 100%; height: 100%; object-fit: contain;">`;
                 
                 // 开始轮询状态
                 this.startPolling(modal);
@@ -610,7 +615,7 @@ class WeChatLoginModule {
         
         this.pollTimer = setInterval(async () => {
             try {
-                const response = await fetch(`${this.config.apiBaseUrl}/check_login?sessionId=${this.sessionId}`);
+                const response = await fetch(`${this.config.apiBaseUrl}/poll?id=${this.sessionId}`);
                 const data = await response.json();
                 
                 const statusEl = modal.querySelector('#status');

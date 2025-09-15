@@ -738,67 +738,15 @@ async function handleValidateToken(request, env) {
       });
     }
 
-    // 解析token获取openid
-    let openid;
-    let decodedToken;
-    try {
-      // 清理token，移除可能的空白字符
-      const cleanToken = token.trim();
-      console.log('清理后的token长度:', cleanToken.length);
-      
-      // 尝试base64解码
-      try {
-        decodedToken = atob(cleanToken);
-        console.log('解码后的token:', decodedToken);
-      } catch (decodeError) {
-        console.log('Base64解码失败，可能是普通格式token:', decodeError);
-        decodedToken = cleanToken;
-      }
-      
-      const tokenParts = decodedToken.split(':');
-      console.log('Token分割结果:', tokenParts, '长度:', tokenParts.length);
-      
-      if (tokenParts.length !== 3) {
-        console.log('Token格式无效，期望3部分，实际:', tokenParts.length);
-        return new Response(JSON.stringify({
-          success: false,
-          valid: false,
-          error: 'token格式无效'
-        }), {
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders
-          }
-        });
-      }
-      
-      openid = tokenParts[0];
-    } catch (error) {
-      console.log('Token解析失败:', error);
-      return new Response(JSON.stringify({
-        success: false,
-        valid: false,
-        error: 'token解析失败'
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders
-        }
-      });
-    }
+    // 使用统一的token验证函数
+    const user = await validateUserToken(token, env);
     
-    console.log('解析出的openid:', openid);
-    
-    // 从KV存储中获取用户数据
-    const userData = await env.WECHAT_KV.get(`user:${openid}`);
-    console.log('从KV获取的用户数据:', userData ? '存在' : '不存在');
-    
-    if (!userData) {
-      console.log('用户不存在，openid:', openid);
+    if (!user) {
+      console.log('Token验证失败');
       return new Response(JSON.stringify({
         success: true,
         valid: false,
-        error: '用户不存在'
+        error: 'token无效或已过期'
       }), {
         headers: {
           'Content-Type': 'application/json',
@@ -807,83 +755,7 @@ async function handleValidateToken(request, env) {
       });
     }
 
-    const user = JSON.parse(userData);
-    console.log('解析的用户数据:', {
-      openid: user.openid,
-      hasToken: !!user.token,
-      tokenLength: user.token ? user.token.length : 0,
-      expireTime: user.expireTime
-    });
-    
-    // 检查token是否匹配 - 清理并比较token
-    const receivedToken = token.trim();
-    const storedToken = user.token ? user.token.trim() : '';
-    
-    // 尝试多种比较方式
-    let areEqual = false;
-    
-    // 1. 直接比较
-    areEqual = receivedToken === storedToken;
-    
-    // 2. 如果直接比较失败，尝试解码后比较
-    if (!areEqual && receivedToken && storedToken) {
-      try {
-        const receivedDecoded = atob(receivedToken);
-        const storedDecoded = atob(storedToken);
-        areEqual = receivedDecoded === storedDecoded;
-        console.log('解码后比较结果:', areEqual);
-      } catch (error) {
-        console.log('解码比较失败:', error);
-      }
-    }
-
-    console.log('--- TOKEN VALIDATION DEEP DIVE ---');
-    console.log(`Received Token: "${receivedToken}" (Length: ${receivedToken.length})`);
-    console.log(`Stored Token  : "${storedToken}" (Length: ${storedToken.length})`);
-    console.log(`Direct Comparison Result: ${areEqual}`);
-
-    if (!areEqual && storedToken) {
-        // 进一步分析差异
-        console.log('Tokens do not match. Analyzing differences...');
-        const maxLen = Math.max(receivedToken.length, storedToken.length);
-        for (let i = 0; i < Math.min(maxLen, 10); i++) { // 只检查前10个字符避免日志过长
-            const charReceived = receivedToken[i] || 'END';
-            const charStored = storedToken[i] || 'END';
-            if (charReceived !== charStored) {
-                console.log(`First difference at index ${i}: Received: '${charReceived}' (code: ${receivedToken.charCodeAt(i) || 'N/A'}), Stored: '${charStored}' (code: ${storedToken.charCodeAt(i) || 'N/A'})`);
-                break;
-            }
-        }
-    }
-    console.log('--- END TOKEN VALIDATION DEEP DIVE ---');
-    
-    if (!areEqual) {
-      console.log('Token不匹配');
-      return new Response(JSON.stringify({
-        success: true,
-        valid: false,
-        error: 'token无效'
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders
-        }
-      });
-    }
-
-    // 检查token是否过期
-    if (user.expireTime && user.expireTime < Date.now()) {
-      return new Response(JSON.stringify({
-        success: true,
-        valid: false,
-        error: 'token已过期'
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders
-        }
-      });
-    }
+    console.log('Token验证成功，用户:', user.openid);
 
     // 确保用户数据包含所有必需字段
     if (!user.articleUsage) {
@@ -2209,11 +2081,89 @@ async function updateUserLevel(env, openid, newLevel) {
 // 从token中提取openid
 function extractOpenidFromToken(token) {
   try {
-    const decoded = atob(token);
+    // 清理token，移除可能的空白字符
+    const cleanToken = token ? token.trim() : '';
+    if (!cleanToken) return null;
+    
+    const decoded = atob(cleanToken);
     const parts = decoded.split(':');
     return parts[0] || null;
   } catch (error) {
     console.error('解析token失败:', error);
+    return null;
+  }
+}
+
+// 验证用户token并返回用户信息
+async function validateUserToken(token, env) {
+  try {
+    // 清理token
+    const cleanToken = token ? token.trim() : '';
+    if (!cleanToken) {
+      console.log('validateUserToken: token为空');
+      return null;
+    }
+
+    // 解析token获取openid
+    let openid;
+    let decodedToken;
+    
+    try {
+      decodedToken = atob(cleanToken);
+      const tokenParts = decodedToken.split(':');
+      
+      if (tokenParts.length !== 3) {
+        console.log('validateUserToken: token格式无效，期望3部分，实际:', tokenParts.length);
+        return null;
+      }
+      
+      openid = tokenParts[0];
+    } catch (error) {
+      console.log('validateUserToken: token解析失败:', error);
+      return null;
+    }
+
+    if (!openid) {
+      console.log('validateUserToken: 无法从token中提取openid');
+      return null;
+    }
+
+    // 从KV存储中获取用户数据
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    if (!userData) {
+      console.log('validateUserToken: 用户不存在，openid:', openid);
+      return null;
+    }
+
+    const user = JSON.parse(userData);
+    
+    // 检查token是否匹配
+    const storedToken = user.token ? user.token.trim() : '';
+    
+    if (cleanToken !== storedToken) {
+      // 尝试解码后比较
+      try {
+        const receivedDecoded = atob(cleanToken);
+        const storedDecoded = atob(storedToken);
+        if (receivedDecoded !== storedDecoded) {
+          console.log('validateUserToken: token不匹配');
+          return null;
+        }
+      } catch (error) {
+        console.log('validateUserToken: token比较失败');
+        return null;
+      }
+    }
+
+    // 检查token是否过期
+    if (user.expireTime && user.expireTime < Date.now()) {
+      console.log('validateUserToken: token已过期');
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error('validateUserToken失败:', error);
     return null;
   }
 }

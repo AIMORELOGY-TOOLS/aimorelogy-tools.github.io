@@ -554,13 +554,6 @@ async function handleGetTokenStats(request, env) {
   }
 }
 
-// 导出处理函数
-export default {
-  async fetch(request, env, ctx) {
-    return handleRequest(request, env);
-  }
-};
-
 // 获取文章生成使用次数
 async function handleGetArticleUsage(request, env) {
   const corsHeaders = {

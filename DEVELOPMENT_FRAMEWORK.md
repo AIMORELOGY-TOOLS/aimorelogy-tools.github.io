@@ -217,6 +217,45 @@ Body: {
 Response: { success: true, message: "等级更新成功" }
 ```
 
+### 预留接口规范
+
+#### 新功能接口命名规范
+```javascript
+// 功能接口：/功能名_action
+POST /新功能_generate    // 生成类接口
+POST /新功能_process     // 处理类接口
+POST /新功能_analyze     // 分析类接口
+GET  /新功能_list        // 列表类接口
+POST /新功能_update      // 更新类接口
+
+// 管理接口：/admin/功能名_action
+GET  /admin/新功能_stats     // 统计接口
+POST /admin/新功能_manage    // 管理接口
+GET  /admin/新功能_list      // 管理列表接口
+```
+
+#### 标准响应格式
+```javascript
+// 成功响应
+{
+  "success": true,
+  "data": { /* 具体数据 */ },
+  "message": "操作成功"
+}
+
+// 错误响应
+{
+  "success": false,
+  "error": "错误信息",
+  "code": "ERROR_CODE"
+}
+
+// 流式响应（SSE）
+data: {"type": "progress", "content": "处理中..."}
+data: {"type": "result", "content": "最终结果"}
+data: {"type": "end"}
+```
+
 ## 🚀 部署流程
 
 ### 1. 主项目部署
@@ -397,6 +436,97 @@ if (新功能Data.success) {
 }
 ```
 
+#### 后台仪表盘完整集成步骤
+
+##### 1. 添加统计卡片（index.html）
+```html
+<!-- 在仪表盘统计区域添加 -->
+<div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-content">
+        <div class="stat-number" id="新功能-count">0</div>
+        <div class="stat-label">新功能使用次数</div>
+    </div>
+</div>
+```
+
+##### 2. 添加API接口（js/api.js）
+```javascript
+class AdminAPI {
+    // 现有方法...
+    
+    async get新功能Stats() {
+        return await this.request('/admin/get_新功能_stats', {
+            method: 'GET'
+        });
+    }
+    
+    async get新功能List(page = 1, limit = 10) {
+        return await this.request(`/admin/get_新功能_list?page=${page}&limit=${limit}`, {
+            method: 'GET'
+        });
+    }
+}
+```
+
+##### 3. 更新仪表盘数据（js/main.js）
+```javascript
+async updateDashboard() {
+    try {
+        // 现有统计...
+        
+        // 新功能统计
+        const 新功能Data = await window.adminAPI.get新功能Stats();
+        if (新功能Data.success) {
+            this.updateStatCard('新功能-count', 新功能Data.stats.total);
+        }
+        
+        // 更新图表数据
+        this.updateCharts();
+        
+    } catch (error) {
+        console.error('更新仪表盘失败:', error);
+    }
+}
+```
+
+##### 4. 添加用户详情显示（js/users.js）
+```javascript
+// 在用户详情模态框中添加新功能使用情况
+function showUserDetails(user) {
+    const 新功能Usage = user.新功能Usage || { daily: 0, total: 0 };
+    const 新功能TokenUsage = user.tokenUsage?.新功能 || { daily: 0, total: 0 };
+    
+    const detailsHTML = `
+        <!-- 现有内容... -->
+        
+        <div class="usage-section">
+            <h4>新功能使用情况</h4>
+            <div class="usage-stats">
+                <div class="usage-item">
+                    <span>今日使用:</span>
+                    <span>${新功能Usage.daily}次</span>
+                </div>
+                <div class="usage-item">
+                    <span>总计使用:</span>
+                    <span>${新功能Usage.total}次</span>
+                </div>
+                <div class="usage-item">
+                    <span>今日Token:</span>
+                    <span>${新功能TokenUsage.daily}</span>
+                </div>
+                <div class="usage-item">
+                    <span>总计Token:</span>
+                    <span>${新功能TokenUsage.total}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 显示模态框...
+}
+```
+
 ## 📊 数据结构
 
 ### 用户数据结构
@@ -425,16 +555,143 @@ if (新功能Data.success) {
             "total": 441,
             "lastResetDate": "Mon Sep 15 2025"
         }
+        // 新功能token使用量会自动添加到这里
+        // "新功能": { "daily": 0, "total": 0, "lastResetDate": "..." }
     },
     "limits": {
         "daily": 10,
         "features": ["basic"],
         "articleDaily": 10
+        // 新功能限制会自动添加到这里
+        // "新功能Daily": 限制次数
     },
-    "wechatInfo": { /* 微信用户信息 */ },
+    "wechatInfo": {
+        "openid": "微信openid",
+        "nickname": "微信昵称",
+        "sex": 0,
+        "province": "省份",
+        "city": "城市",
+        "country": "国家",
+        "headimgurl": "头像URL",
+        "subscribe_time": 1757649572,
+        "unionid": "unionid",
+        "remark": "备注",
+        "groupid": 0,
+        "tagid_list": [],
+        "subscribe_scene": "ADD_SCENE_QR_CODE",
+        "qr_scene": 0,
+        "qr_scene_str": "场景值",
+        "subscribe": 1
+    },
     "token": "用户token",
     "expireTime": 1758513438243,
     "loginTime": 1757908638247
+}
+```
+
+### 用户等级权限体系
+
+#### Normal用户（普通用户）
+```javascript
+{
+    "level": "normal",
+    "limits": {
+        "daily": 10,                    // 每日总使用次数
+        "articleDaily": 10,             // 文章生成每日次数
+        "features": ["basic"],          // 可用功能列表
+        "tokenDaily": 5000,             // 每日token限制
+        "maxRequestSize": 1000          // 单次请求最大字符数
+    }
+}
+```
+
+#### VIP用户
+```javascript
+{
+    "level": "vip",
+    "limits": {
+        "daily": 50,                    // 每日总使用次数
+        "articleDaily": 50,             // 文章生成每日次数
+        "features": ["basic", "advanced"], // 可用功能列表
+        "tokenDaily": 20000,            // 每日token限制
+        "maxRequestSize": 5000          // 单次请求最大字符数
+    }
+}
+```
+
+#### SVIP用户
+```javascript
+{
+    "level": "svip",
+    "limits": {
+        "daily": 200,                   // 每日总使用次数
+        "articleDaily": 200,            // 文章生成每日次数
+        "features": ["basic", "advanced", "premium"], // 可用功能列表
+        "tokenDaily": 100000,           // 每日token限制
+        "maxRequestSize": 20000         // 单次请求最大字符数
+    }
+}
+```
+
+#### Admin用户
+```javascript
+{
+    "level": "admin",
+    "limits": {
+        "daily": -1,                    // 无限制
+        "articleDaily": -1,             // 无限制
+        "features": ["all"],            // 所有功能
+        "tokenDaily": -1,               // 无限制
+        "maxRequestSize": -1            // 无限制
+    }
+}
+```
+
+### Cloudflare KV存储结构
+
+#### 存储键值规范
+```javascript
+// 用户数据
+"user:oEbjz1xSWO69Xfu0aK55vmnHWwdY" -> 用户完整数据对象
+
+// 会话数据
+"session:sessionId" -> 会话信息
+
+// 统计数据
+"stats:daily:2025-09-15" -> 当日统计数据
+"stats:total" -> 总体统计数据
+
+// 功能使用记录
+"usage:article:2025-09-15" -> 文章生成当日使用记录
+"usage:新功能:2025-09-15" -> 新功能当日使用记录
+
+// 系统配置
+"config:system" -> 系统配置信息
+"config:limits" -> 等级限制配置
+```
+
+#### KV存储操作函数
+```javascript
+// 获取用户数据
+async function getUser(openid, env) {
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    return userData ? JSON.parse(userData) : null;
+}
+
+// 保存用户数据
+async function saveUser(user, env) {
+    await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
+}
+
+// 获取统计数据
+async function getStats(date, env) {
+    const stats = await env.WECHAT_KV.get(`stats:daily:${date}`);
+    return stats ? JSON.parse(stats) : {};
+}
+
+// 保存统计数据
+async function saveStats(date, stats, env) {
+    await env.WECHAT_KV.put(`stats:daily:${date}`, JSON.stringify(stats));
 }
 ```
 
@@ -456,15 +713,117 @@ if (新功能Data.success) {
 3. **管理员API需要adminToken验证**
 4. **错误处理要统一格式**
 
+## 🔍 完整接口清单
+
+### 现有功能接口
+```javascript
+// 用户认证
+GET  /wechat/login              // 获取登录URL
+GET  /wechat/callback           // 微信回调处理
+POST /verify_token              // 验证用户token
+
+// 文章生成功能
+POST /generate_article          // 生成文章（SSE流式）
+POST /update_article_usage      // 更新文章使用统计
+
+// 管理员接口
+GET  /admin/list_all_keys       // 获取所有用户键
+GET  /admin/get_user            // 获取单个用户信息
+GET  /admin/get_user_stats      // 获取用户统计
+GET  /admin/get_token_stats     // 获取token统计
+POST /admin/update_user_level   // 更新用户等级
+
+// 系统接口
+GET  /health                    // 健康检查
+OPTIONS /*                      // CORS预检
+```
+
+### 预留接口模板
+```javascript
+// 新功能接口模板（复制此模板开发新功能）
+POST /新功能_generate           // 生成类功能
+POST /新功能_process            // 处理类功能
+POST /新功能_analyze            // 分析类功能
+GET  /新功能_list               // 列表类功能
+POST /update_新功能_usage       // 更新使用统计
+
+// 对应管理接口
+GET  /admin/get_新功能_stats    // 获取功能统计
+GET  /admin/get_新功能_list     // 获取功能列表
+POST /admin/manage_新功能       // 管理功能设置
+```
+
+### Token计算标准
+```javascript
+// DeepSeek官方token计算标准
+const TOKEN_RATES = {
+    chinese: 0.6,      // 中文字符
+    english: 0.3,      // 英文字符
+    other: 0.5         // 其他字符
+};
+
+// 计算函数
+function calculateTokens(text) {
+    let tokens = 0;
+    for (let char of text) {
+        if (/[\u4e00-\u9fff]/.test(char)) {
+            tokens += TOKEN_RATES.chinese;
+        } else if (/[a-zA-Z]/.test(char)) {
+            tokens += TOKEN_RATES.english;
+        } else {
+            tokens += TOKEN_RATES.other;
+        }
+    }
+    return Math.ceil(tokens);
+}
+```
+
+### 使用限制检查函数
+```javascript
+// 检查用户是否可以使用功能
+async function checkUsageLimit(user, featureName) {
+    const today = new Date().toDateString();
+    
+    // 检查功能权限
+    if (!user.limits.features.includes(featureName) && 
+        !user.limits.features.includes('all')) {
+        return { allowed: false, reason: '您的等级不支持此功能' };
+    }
+    
+    // 检查每日使用次数
+    const dailyUsage = user[`${featureName}Usage`]?.daily || 0;
+    const dailyLimit = user.limits[`${featureName}Daily`] || user.limits.daily;
+    
+    if (dailyLimit !== -1 && dailyUsage >= dailyLimit) {
+        return { allowed: false, reason: '今日使用次数已达上限' };
+    }
+    
+    // 检查token限制
+    const tokenUsage = user.tokenUsage?.[featureName]?.daily || 0;
+    const tokenLimit = user.limits.tokenDaily;
+    
+    if (tokenLimit !== -1 && tokenUsage >= tokenLimit) {
+        return { allowed: false, reason: '今日token使用量已达上限' };
+    }
+    
+    return { allowed: true };
+}
+```
+
 ### 新功能开发检查清单
-- [ ] 前端模块文件创建
-- [ ] 后端API路由添加
-- [ ] 权限验证实现
-- [ ] 使用次数统计
-- [ ] 错误处理完善
-- [ ] 后台管理集成
-- [ ] 测试所有接口
-- [ ] 部署验证
+- [ ] 前端模块文件创建（/sections/新功能.js）
+- [ ] 页面文件创建（/新功能.html）
+- [ ] 后端API路由添加（src/index.js）
+- [ ] 权限验证实现（checkUsageLimit）
+- [ ] 使用次数统计（update新功能Usage）
+- [ ] Token消耗统计（tokenUsage更新）
+- [ ] 错误处理完善（try-catch + 标准响应）
+- [ ] 后台管理集成（统计卡片 + API接口）
+- [ ] 用户详情显示（使用情况展示）
+- [ ] 等级限制配置（limits对象更新）
+- [ ] 数据结构扩展（用户对象字段）
+- [ ] 测试所有接口（前端调用 + 后台显示）
+- [ ] 部署验证（三个地址同步更新）
 
 ## 🔄 开发工作流
 
@@ -482,4 +841,67 @@ if (新功能Data.success) {
 4. 检查用户权限和限制
 5. 确认数据结构正确
 
-这个框架已经成型，所有新功能都应该按照这个规范进行开发，确保系统的一致性和可维护性。
+## 🚨 关键注意事项
+
+### 三地址协调机制
+1. **主项目地址**: https://jeff010726.github.io/AIMORELOGY-TOOLS/
+2. **后台地址**: https://jeff010726.github.io/AIMORELOGY-TOOLS-BACKSTAGE/
+3. **API地址**: https://aimorelogybackend.site
+
+### 数据同步要求
+- 所有用户操作必须实时更新到KV存储
+- 后台仪表盘必须能实时显示最新数据
+- 三个地址的API调用必须保持一致
+
+### 部署同步检查
+```bash
+# 检查主项目部署
+curl -I https://jeff010726.github.io/AIMORELOGY-TOOLS/
+
+# 检查后台部署
+curl -I https://jeff010726.github.io/AIMORELOGY-TOOLS-BACKSTAGE/
+
+# 检查API服务
+curl -I https://aimorelogybackend.site/health
+```
+
+### 新功能完整开发流程
+1. **设计阶段**: 确定功能需求和接口设计
+2. **前端开发**: 创建页面和模块文件
+3. **后端开发**: 添加API路由和业务逻辑
+4. **权限集成**: 配置等级限制和使用统计
+5. **后台集成**: 添加管理界面和统计显示
+6. **测试验证**: 全链路功能测试
+7. **部署上线**: 三地址同步部署
+8. **监控验证**: 确认功能正常运行
+
+### 故障排查步骤
+1. **检查前端控制台**: 查看JavaScript错误
+2. **检查网络请求**: 验证API调用状态
+3. **检查Cloudflare日志**: 查看后端处理情况
+4. **检查KV存储**: 验证数据存储状态
+5. **检查用户权限**: 确认等级和限制设置
+6. **检查后台显示**: 验证管理界面数据
+
+### 数据备份和恢复
+```javascript
+// 导出用户数据
+async function exportAllUsers(env) {
+    const keys = await env.WECHAT_KV.list({ prefix: 'user:' });
+    const users = [];
+    for (const key of keys.keys) {
+        const userData = await env.WECHAT_KV.get(key.name);
+        users.push(JSON.parse(userData));
+    }
+    return users;
+}
+
+// 导入用户数据
+async function importUsers(users, env) {
+    for (const user of users) {
+        await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
+    }
+}
+```
+
+这个框架已经成型，所有新功能都应该按照这个规范进行开发，确保系统的一致性和可维护性。每个新功能的开发都必须考虑到三地址的协调配合，不能出现任何遗漏。

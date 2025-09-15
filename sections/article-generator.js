@@ -666,7 +666,7 @@ class ArticleGeneratorModule {
                 ],
                 stream: true,
                 temperature: 0.7,
-                max_tokens: Math.min(Math.max(maxWords * 2, 2000), 4000)
+                max_tokens: Math.min(Math.max(maxWords * 1.5, 2000), 8000)
             })
         });
         

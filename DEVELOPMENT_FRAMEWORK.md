@@ -176,6 +176,23 @@ Response: { success: true, keys: [...] }
 
 GET /admin/get_user?key=user:openid&adminToken=admin_secret_token
 Response: { success: true, user: {...} }
+
+GET /admin/get_all_users
+Response: { 
+  success: true, 
+  users: [
+    {
+      openid: "用户openid",
+      userid: "用户ID", 
+      level: "normal|vip|svip|admin",
+      nickname: "用户昵称",
+      usage: { total: 使用次数, daily: 今日使用次数 },
+      createdAt: "注册时间",
+      lastLoginAt: "最后登录时间"
+    }
+  ], 
+  total: 用户总数 
+}
 ```
 
 #### 2. 用户统计
@@ -194,14 +211,21 @@ Response: {
 
 #### 3. Token统计
 ```javascript
-GET /admin/get_token_stats?adminToken=admin_secret_token
+GET /admin/get_token_stats
 Response: {
   success: true,
   stats: {
     totalTokens: 50000,
     dailyTokens: 1500,
     articleTokens: 45000,
-    topUsers: [...]
+    topUsers: [
+      {
+        openid: "用户openid",
+        nickname: "用户昵称", 
+        totalTokens: 消耗总量,
+        dailyTokens: 今日消耗
+      }
+    ]
   }
 }
 ```

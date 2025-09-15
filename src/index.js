@@ -325,7 +325,7 @@ async function handleUpdateArticleUsage(request, env) {
       user.articleUsage.daily += amount;
       user.articleUsage.total += amount;
       
-      // 初始化token消耗统计
+      // 初始化token消耗统计（确保所有用户都有这个字段）
       if (!user.tokenUsage) {
         user.tokenUsage = {
           article: {
@@ -334,6 +334,7 @@ async function handleUpdateArticleUsage(request, env) {
             lastResetDate: new Date().toDateString()
           }
         };
+        console.log(`为用户 ${openid} 初始化tokenUsage字段`);
       }
       
       // 检查是否需要重置每日token计数
@@ -343,19 +344,27 @@ async function handleUpdateArticleUsage(request, env) {
           total: 0,
           lastResetDate: new Date().toDateString()
         };
+        console.log(`为用户 ${openid} 初始化tokenUsage.article字段`);
       }
       
       if (user.tokenUsage.article.lastResetDate !== today) {
         user.tokenUsage.article.daily = 0;
         user.tokenUsage.article.lastResetDate = today;
+        console.log(`重置用户 ${openid} 的每日token计数`);
       }
       
       // 记录token消耗（从请求体中获取）
       const tokenConsumed = body.tokenConsumed || 0;
+      console.log(`用户 ${openid} 文章生成，传入tokenConsumed: ${tokenConsumed}`);
+      
+      // 即使tokenConsumed为0，也要确保tokenUsage字段存在并被保存
+      user.tokenUsage.article.daily += tokenConsumed;
+      user.tokenUsage.article.total += tokenConsumed;
+      
       if (tokenConsumed > 0) {
-        user.tokenUsage.article.daily += tokenConsumed;
-        user.tokenUsage.article.total += tokenConsumed;
-        console.log(`用户 ${openid} 文章生成消耗token: ${tokenConsumed}`);
+        console.log(`用户 ${openid} 文章生成消耗token: ${tokenConsumed}, 今日总计: ${user.tokenUsage.article.daily}, 历史总计: ${user.tokenUsage.article.total}`);
+      } else {
+        console.log(`用户 ${openid} 文章生成，tokenConsumed为0，但已确保tokenUsage字段存在`);
       }
     }
 

@@ -128,6 +128,8 @@ class WeChatLoginModule {
         }
 
         this.container = container;
+        // 将实例保存到容器元素上，供全局函数使用
+        container._wechatLoginInstance = this;
         
         if (this.currentUser) {
             console.log('渲染用户信息');
@@ -308,7 +310,7 @@ class WeChatLoginModule {
                     <button class="refresh-btn" id="wechat-refresh-btn" title="刷新用户数据">
                         🔄
                     </button>
-                    <button class="logout-btn" id="wechat-logout-btn">
+                    <button class="logout-btn" id="wechat-logout-btn" onclick="window.wechatLogout && window.wechatLogout()">
                         退出
                     </button>
                 </div>
@@ -385,9 +387,20 @@ class WeChatLoginModule {
     // 用户信息区域点击事件处理（事件委托）
     handleUserInfoClick(event) {
         const target = event.target;
+        console.log('用户信息区域点击事件:', {
+            targetId: target.id,
+            targetClass: target.className,
+            targetText: target.textContent,
+            targetTagName: target.tagName
+        });
         
-        // 检查是否点击了退出按钮
-        if (target.id === 'wechat-logout-btn' || target.closest('#wechat-logout-btn')) {
+        // 检查是否点击了退出按钮或其内容
+        const isLogoutBtn = target.id === 'wechat-logout-btn' || 
+                           target.closest('#wechat-logout-btn') ||
+                           target.classList.contains('logout-btn') ||
+                           target.textContent.trim() === '退出';
+        
+        if (isLogoutBtn) {
             event.preventDefault();
             event.stopPropagation();
             console.log('退出按钮被点击 - 事件委托方式');
@@ -395,8 +408,13 @@ class WeChatLoginModule {
             return false;
         }
         
-        // 检查是否点击了刷新按钮
-        if (target.id === 'wechat-refresh-btn' || target.closest('#wechat-refresh-btn')) {
+        // 检查是否点击了刷新按钮或其内容
+        const isRefreshBtn = target.id === 'wechat-refresh-btn' || 
+                            target.closest('#wechat-refresh-btn') ||
+                            target.classList.contains('refresh-btn') ||
+                            target.textContent.trim() === '🔄';
+        
+        if (isRefreshBtn) {
             event.preventDefault();
             event.stopPropagation();
             console.log('刷新按钮被点击 - 事件委托方式');
@@ -869,3 +887,22 @@ class WeChatLoginModule {
 
 // 导出模块
 window.WeChatLoginModule = WeChatLoginModule;
+
+// 全局退出函数（作为备用方案）
+window.wechatLogout = function() {
+    console.log('全局退出函数被调用');
+    // 查找当前的微信登录实例
+    const containers = document.querySelectorAll('[id*="wechat-login"]');
+    for (let container of containers) {
+        if (container._wechatLoginInstance) {
+            console.log('找到微信登录实例，执行退出');
+            container._wechatLoginInstance.logout();
+            return;
+        }
+    }
+    
+    // 如果没找到实例，直接清除本地存储
+    console.log('未找到实例，直接清除本地存储');
+    localStorage.removeItem('wechat_user_info');
+    location.reload();
+};

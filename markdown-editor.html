@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown编辑器 - AIMORELOGY TOOLS</title>
+    <link rel="stylesheet" href="sections/markdown-editor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div>正在加载Markdown编辑器...</div>
+    </div>
+    
+    <div id="app" class="hidden">
+        <!-- Markdown编辑器容器 -->
+    </div>
+
+    <!-- 依赖库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    
+    <!-- 登录模块 -->
+    <script src="src/wechat-login.js"></script>
+    
+    <!-- Markdown编辑器模块 -->
+    <script src="sections/markdown-editor.js"></script>
+    
+    <script>
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // 检查登录状态
+                const loginStatus = await checkLoginStatus();
+                if (!loginStatus.isLoggedIn) {
+                    window.location.href = 'wechat-login.html?redirect=' + encodeURIComponent(window.location.href);
+                    return;
+                }
+                
+                // 初始化Markdown编辑器
+                const container = document.getElementById('app');
+                const markdownEditor = new MarkdownEditorModule({
+                    user: loginStatus.user
+                });
+                
+                await markdownEditor.init(container);
+                
+                // 隐藏加载界面，显示应用
+                document.getElementById('loading').classList.add('hidden');
+                container.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('初始化失败:', error);
+                document.getElementById('loading').innerHTML = '<div>加载失败，请刷新页面重试</div>';
+            }
+        });
+    </script>
+</body>
+</html>

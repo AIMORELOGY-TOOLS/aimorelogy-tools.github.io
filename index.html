@@ -330,16 +330,16 @@
                     </button>
                 </div>
 
-                <!-- 智能摘要模块 -->
-                <div class="module-card">
+                <!-- 公众号内容排版模块 -->
+                <div class="module-card" data-module="markdown-editor">
                     <span class="module-icon">📋</span>
-                    <h3 class="module-title">智能摘要</h3>
+                    <h3 class="module-title">公众号内容排版</h3>
                     <p class="module-description">
-                        自动提取文章核心内容，生成精准摘要。支持长文本处理，快速获取关键信息。
+                        专业的Markdown编辑器，支持实时预览、AI辅助创作和微信公众号样式排版。让您的内容更加美观专业。
                     </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
+                    <span class="module-status status-available">现已上线</span>
+                    <button class="module-button btn-primary" onclick="openMarkdownEditor()">
+                        立即使用
                     </button>
                 </div>
 
@@ -453,42 +453,37 @@
                 const status = card.querySelector('.module-status');
                 const moduleType = card.getAttribute('data-module');
                 
+                // 已接入的功能模块列表
+                const availableModules = ['article-generator', 'markdown-editor'];
+                
                 if (userData) {
                     // 用户已登录
-                    if (moduleType === 'article-generator') {
-                        // 文章生成模块对所有登录用户开放
+                    if (availableModules.includes(moduleType)) {
+                        // 已接入的模块对所有登录用户开放
                         button.textContent = '立即使用';
                         button.className = 'module-button btn-primary';
                         button.disabled = false;
                         status.textContent = '现已上线';
                         status.className = 'module-status status-available';
                     } else {
-                        // 其他模块根据用户等级决定
-                        if (userData.level === 'admin') {
-                            button.textContent = '立即使用';
-                            button.className = 'module-button btn-primary';
-                            button.disabled = false;
-                            status.textContent = '可用';
-                            status.className = 'module-status status-available';
-                        } else {
-                            // 其他用户暂时还是显示即将上线
-                            button.textContent = '敬请期待';
-                            button.className = 'module-button btn-disabled';
-                            button.disabled = true;
-                            status.textContent = '即将上线';
-                            status.className = 'module-status status-coming-soon';
-                        }
+                        // 未接入的模块对所有用户都显示敬请期待
+                        button.textContent = '敬请期待';
+                        button.className = 'module-button btn-disabled';
+                        button.disabled = true;
+                        status.textContent = '即将上线';
+                        status.className = 'module-status status-coming-soon';
                     }
                 } else {
-                    // 用户未登录，显示功能入口但需要登录
-                    if (moduleType === 'article-generator') {
+                    // 用户未登录
+                    if (availableModules.includes(moduleType)) {
+                        // 已接入的模块显示功能入口但需要登录
                         button.textContent = '立即使用';
                         button.className = 'module-button btn-primary';
                         button.disabled = false;
                         status.textContent = '现已上线';
                         status.className = 'module-status status-available';
                     } else {
-                        // 其他模块显示即将上线
+                        // 未接入的模块显示即将上线
                         button.textContent = '敬请期待';
                         button.className = 'module-button btn-disabled';
                         button.disabled = true;
@@ -532,6 +527,17 @@
             
             // 创建文章生成器页面
             window.location.href = 'article-generator.html';
+        }
+
+        // 打开Markdown编辑器
+        function openMarkdownEditor() {
+            if (!wechatLogin.getCurrentUser()) {
+                alert('请先登录后使用此功能');
+                return;
+            }
+            
+            // 跳转到Markdown编辑器页面
+            window.location.href = 'markdown-editor.html';
         }
 
         // 全局函数，供其他模块调用

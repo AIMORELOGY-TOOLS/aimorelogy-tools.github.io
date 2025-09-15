@@ -63,6 +63,10 @@ export default {
         return await handleGetTokenStats(request, env);
       } else if (url.pathname === '/admin/get_token_history') {
         return await handleGetTokenHistory(request, env);
+      } else if (url.pathname === '/markdown_process') {
+        return await handleMarkdownProcess(request, env);
+      } else if (url.pathname === '/update_markdown_usage') {
+        return await handleUpdateMarkdownUsage(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -2829,6 +2833,381 @@ async function updateUserTokenHistory(env, openid, tokenConsumed) {
     
   } catch (error) {
     console.error('更新用户token历史记录失败:', error);
+  }
+}
+
+// 新增：Markdown处理接口
+async function handleMarkdownProcess(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = await request.json();
+    const { action, prompt, context, content, title } = body;
+
+    // 从Authorization头获取token
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少有效的授权token'
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const token = authHeader.substring(7);
+    const user = await validateUserToken(token, env);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户未登录或token无效'
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    // 检查用户权限和使用限制
+    const canUse = await checkMarkdownUsageLimit(user);
+    if (!canUse.allowed) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: canUse.reason
+      }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    let result = {};
+
+    switch (action) {
+      case 'ai_generate':
+        result = await processAIGenerate(prompt, context, env);
+        break;
+      case 'save_markdown':
+        result = await saveMarkdownDocument(user.openid, content, title, env);
+        break;
+      case 'load_markdown':
+        result = await loadMarkdownDocument(user.openid, body.documentId, env);
+        break;
+      default:
+        throw new Error('不支持的操作类型');
+    }
+
+    // 如果是AI生成，更新使用次数和token消耗
+    if (action === 'ai_generate' && result.success) {
+      await updateMarkdownUsageCount(user.openid, 1, result.tokenConsumed || 0, env);
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+
+  } catch (error) {
+    console.error('Markdown处理失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 新增：更新Markdown使用次数接口
+async function handleUpdateMarkdownUsage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = await request.json();
+    const { token, action, amount = 1, tokenConsumed = 0 } = body;
+
+    // 验证用户token
+    const user = await validateUserToken(token, env);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户未登录或token无效'
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    // 更新使用次数
+    await updateMarkdownUsageCount(user.openid, amount, tokenConsumed, env);
+
+    // 获取更新后的用户数据
+    const updatedUserData = await env.WECHAT_KV.get(`user:${user.openid}`);
+    const updatedUser = JSON.parse(updatedUserData);
+
+    return new Response(JSON.stringify({
+      success: true,
+      usage: updatedUser.markdownUsage,
+      tokenUsage: updatedUser.tokenUsage,
+      message: 'Markdown使用次数更新成功'
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+
+  } catch (error) {
+    console.error('更新Markdown使用次数失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 检查Markdown使用限制
+async function checkMarkdownUsageLimit(user) {
+  const today = new Date().toDateString();
+  
+  // 检查功能权限
+  if (!user.limits.features.includes('markdown') && 
+      !user.limits.features.includes('basic') && 
+      !user.limits.features.includes('all')) {
+    return { allowed: false, reason: '您的等级不支持Markdown编辑器功能' };
+  }
+  
+  // 检查每日使用次数
+  const dailyUsage = user.markdownUsage?.daily || 0;
+  const dailyLimit = user.limits.markdownDaily || user.limits.daily;
+  
+  if (dailyLimit !== -1 && dailyUsage >= dailyLimit) {
+    return { allowed: false, reason: '今日Markdown编辑器使用次数已达上限' };
+  }
+  
+  return { allowed: true };
+}
+
+// 更新Markdown使用次数
+async function updateMarkdownUsageCount(openid, amount, tokenConsumed, env) {
+  try {
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    if (!userData) {
+      throw new Error('用户不存在');
+    }
+
+    const user = JSON.parse(userData);
+    const today = new Date().toDateString();
+
+    // 初始化markdownUsage字段
+    if (!user.markdownUsage) {
+      user.markdownUsage = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+    }
+
+    // 检查是否需要重置每日计数
+    if (user.markdownUsage.lastResetDate !== today) {
+      user.markdownUsage.daily = 0;
+      user.markdownUsage.lastResetDate = today;
+      console.log(`重置用户 ${openid} 的每日Markdown使用计数`);
+    }
+
+    // 更新使用次数
+    user.markdownUsage.daily += amount;
+    user.markdownUsage.total += amount;
+
+    // 初始化并更新token使用量
+    if (!user.tokenUsage) user.tokenUsage = {};
+    if (!user.tokenUsage.markdown) {
+      user.tokenUsage.markdown = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+    }
+
+    // 检查是否需要重置每日token计数
+    if (user.tokenUsage.markdown.lastResetDate !== today) {
+      user.tokenUsage.markdown.daily = 0;
+      user.tokenUsage.markdown.lastResetDate = today;
+      console.log(`重置用户 ${openid} 的每日Markdown token计数`);
+    }
+
+    // 更新token消耗
+    user.tokenUsage.markdown.daily += tokenConsumed;
+    user.tokenUsage.markdown.total += tokenConsumed;
+
+    // 更新历史记录
+    if (tokenConsumed > 0) {
+      await updateUserTokenHistory(env, openid, tokenConsumed);
+    }
+
+    console.log(`用户 ${openid} Markdown使用，次数: +${amount}, token: +${tokenConsumed}, 今日总计: ${user.markdownUsage.daily}, token总计: ${user.tokenUsage.markdown.daily}`);
+
+    // 保存用户数据
+    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+
+  } catch (error) {
+    console.error('更新Markdown使用次数失败:', error);
+    throw error;
+  }
+}
+
+// AI内容生成处理
+async function processAIGenerate(prompt, context, env) {
+  try {
+    // 构建完整的提示词
+    let fullPrompt = prompt;
+    if (context && context.trim()) {
+      fullPrompt = `基于以下上下文：
+${context}
+
+${prompt}`;
+    }
+
+    // 调用DeepSeek API
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer sk-bfb1a4a3455940aa97488e61bf6ee924'
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: '你是一个专业的Markdown内容创作助手。请根据用户需求生成高质量的Markdown格式内容。'
+          },
+          {
+            role: 'user',
+            content: fullPrompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`DeepSeek API调用失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || '';
+    const tokenConsumed = data.usage?.total_tokens || 0;
+
+    return {
+      success: true,
+      content: content,
+      tokenConsumed: tokenConsumed
+    };
+
+  } catch (error) {
+    console.error('AI生成失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// 保存Markdown文档
+async function saveMarkdownDocument(openid, content, title, env) {
+  try {
+    const timestamp = new Date().toISOString();
+    const documentId = `md_${openid}_${Date.now()}`;
+    
+    const document = {
+      id: documentId,
+      openid: openid,
+      title: title || '无标题文档',
+      content: content,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    // 保存到KV存储
+    await env.WECHAT_KV.put(`markdown:${documentId}`, JSON.stringify(document));
+
+    // 更新用户的文档列表
+    const userDocsKey = `markdown_docs:${openid}`;
+    const userDocsData = await env.WECHAT_KV.get(userDocsKey);
+    const userDocs = userDocsData ? JSON.parse(userDocsData) : [];
+    
+    userDocs.unshift({
+      id: documentId,
+      title: document.title,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    });
+
+    // 只保留最近50个文档记录
+    if (userDocs.length > 50) {
+      userDocs.splice(50);
+    }
+
+    await env.WECHAT_KV.put(userDocsKey, JSON.stringify(userDocs));
+
+    return {
+      success: true,
+      documentId: documentId,
+      message: '文档保存成功'
+    };
+
+  } catch (error) {
+    console.error('保存Markdown文档失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// 加载Markdown文档
+async function loadMarkdownDocument(openid, documentId, env) {
+  try {
+    const documentData = await env.WECHAT_KV.get(`markdown:${documentId}`);
+    if (!documentData) {
+      throw new Error('文档不存在');
+    }
+
+    const document = JSON.parse(documentData);
+    
+    // 验证文档所有权
+    if (document.openid !== openid) {
+      throw new Error('无权访问此文档');
+    }
+
+    return {
+      success: true,
+      document: document
+    };
+
+  } catch (error) {
+    console.error('加载Markdown文档失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 

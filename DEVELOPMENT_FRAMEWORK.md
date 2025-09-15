@@ -167,6 +167,60 @@ Response: {
 }
 ```
 
+### Markdown编辑器接口
+
+#### 1. Markdown处理
+```javascript
+POST /markdown_process
+Headers: { Authorization: "Bearer token" }
+Body: {
+  action: "ai_generate|save_markdown|load_markdown",
+  prompt: "AI生成提示词（action为ai_generate时）",
+  context: "上下文内容（可选）",
+  content: "Markdown内容（保存时）",
+  title: "文档标题（保存时）",
+  documentId: "文档ID（加载时）"
+}
+Response: {
+  // AI生成响应
+  success: true,
+  content: "生成的Markdown内容",
+  tokenConsumed: 150
+  
+  // 保存响应
+  success: true,
+  documentId: "md_openid_timestamp",
+  message: "文档保存成功"
+  
+  // 加载响应
+  success: true,
+  document: {
+    id: "文档ID",
+    title: "文档标题",
+    content: "Markdown内容",
+    createdAt: "创建时间",
+    updatedAt: "更新时间"
+  }
+}
+```
+
+#### 2. 更新Markdown使用次数
+```javascript
+POST /update_markdown_usage
+Body: {
+  token: "用户token",
+  action: "markdown_generation",
+  amount: 1,
+  tokenConsumed: 150
+}
+Response: {
+  success: true,
+  usage: { daily: 1, total: 1, lastResetDate: "..." },
+  tokenUsage: { markdown: { daily: 150, total: 150, ... } },
+  message: "Markdown使用次数更新成功"
+}
+```
+
 ### 管理员接口
 
 #### 1. 获取所有用户
@@ -774,6 +828,10 @@ POST /verify_token              // 验证用户token
 // 文章生成功能
 POST /generate_article          // 生成文章（SSE流式）
 POST /update_article_usage      // 更新文章使用统计
+
+// Markdown编辑器功能
+POST /markdown_process          // Markdown处理（AI生成、保存、加载）
+POST /update_markdown_usage     // 更新Markdown使用统计
 
 // 管理员接口
 GET  /admin/list_all_keys       // 获取所有用户键

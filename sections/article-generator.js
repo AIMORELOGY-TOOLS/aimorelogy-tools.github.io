@@ -639,7 +639,7 @@ class ArticleGeneratorModule {
     // 生成文章
     async generateArticle(topic, reference, minWords, maxWords) {
         // 构建提示词
-        const systemPrompt = this.systemPrompt
+        let systemPrompt = this.systemPrompt
             .replace('##MIN_WORDS##', minWords)
             .replace('##MAX_WORDS##', maxWords);
         
@@ -651,23 +651,39 @@ class ArticleGeneratorModule {
         
         userPrompt += `\n\n要求：\n- 字数控制在${minWords}-${maxWords}字之间\n- 风格要符合公众号爆文特点\n- 内容要有深度和可读性`;
         
+        // 确保提示词不会过长
+        const maxPromptLength = 4000;
+        if (systemPrompt.length > maxPromptLength) {
+            systemPrompt = systemPrompt.substring(0, maxPromptLength);
+        }
+        if (userPrompt.length > maxPromptLength) {
+            userPrompt = userPrompt.substring(0, maxPromptLength);
+        }
+
+        // 计算合理的max_tokens值
+        let maxTokens = Math.min(Math.max(maxWords * 1.2, 1000), 4000);
+        
         // 调用DeepSeek API
+        const requestBody = {
+            model: 'deepseek-chat',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            stream: true,
+            temperature: 0.7,
+            max_tokens: maxTokens
+        };
+
+        console.log('DeepSeek API请求参数:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch(`${this.config.deepseekBaseUrl}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.config.deepseekApiKey}`
             },
-            body: JSON.stringify({
-                model: 'deepseek-chat',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                stream: true,
-                temperature: 0.7,
-                max_tokens: Math.min(Math.max(maxWords * 1.5, 2000), 8000)
-            })
+            body: JSON.stringify(requestBody)
         });
         
         if (!response.ok) {

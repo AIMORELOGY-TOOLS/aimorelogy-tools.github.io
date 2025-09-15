@@ -220,11 +220,45 @@ async function handleUpdateArticleUsage(request, env) {
     }
 
     // 解析token获取openid
-    const tokenParts = token.split(':');
-    if (tokenParts.length !== 3) {
+    let openid;
+    let decodedToken;
+    try {
+      // 清理token，移除可能的空白字符
+      const cleanToken = token.trim();
+      console.log('更新使用次数 - 清理后的token长度:', cleanToken.length);
+      
+      // 尝试base64解码
+      try {
+        decodedToken = atob(cleanToken);
+        console.log('更新使用次数 - 解码后的token:', decodedToken);
+      } catch (decodeError) {
+        console.log('更新使用次数 - Base64解码失败，可能是普通格式token:', decodeError);
+        decodedToken = cleanToken;
+      }
+      
+      const tokenParts = decodedToken.split(':');
+      console.log('更新使用次数 - Token分割结果:', tokenParts, '长度:', tokenParts.length);
+      
+      if (tokenParts.length !== 3) {
+        console.log('更新使用次数 - Token格式无效，期望3部分，实际:', tokenParts.length);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'token格式无效'
+        }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        });
+      }
+      
+      openid = tokenParts[0];
+    } catch (error) {
+      console.log('更新使用次数 - Token解析失败:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: 'token格式无效'
+        error: 'token解析失败'
       }), {
         status: 400,
         headers: {
@@ -233,8 +267,6 @@ async function handleUpdateArticleUsage(request, env) {
         }
       });
     }
-
-    const openid = tokenParts[0];
     
     // 从KV存储中获取用户数据
     const userData = await env.WECHAT_KV.get(`user:${openid}`);

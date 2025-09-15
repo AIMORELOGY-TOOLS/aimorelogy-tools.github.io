@@ -659,19 +659,21 @@ class ArticleGeneratorModule {
                 'Authorization': `Bearer ${this.config.deepseekApiKey}`
             },
             body: JSON.stringify({
-                model: this.config.model,
+                model: 'deepseek-chat',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt }
                 ],
                 stream: true,
                 temperature: 0.7,
-                max_tokens: Math.max(maxWords * 2, 4000)
+                max_tokens: Math.min(Math.max(maxWords * 2, 2000), 4000)
             })
         });
         
         if (!response.ok) {
-            throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('DeepSeek API错误详情:', errorText);
+            throw new Error(`API请求失败: ${response.status} - ${errorText}`);
         }
         
         // 处理流式响应并获取token消耗

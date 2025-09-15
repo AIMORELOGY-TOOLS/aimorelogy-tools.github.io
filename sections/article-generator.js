@@ -417,6 +417,12 @@ class ArticleGeneratorModule {
 
     // 绑定事件
     bindEvents() {
+        // 防止重复绑定
+        if (this.eventsbound) {
+            console.log('事件已绑定，跳过重复绑定');
+            return;
+        }
+        
         console.log('开始绑定事件...');
         console.log('容器元素:', this.container);
         
@@ -474,6 +480,10 @@ class ArticleGeneratorModule {
         // 监听登录状态变化
         document.removeEventListener('wechatLoginStatusChange', this.handleLoginStatusChange);
         document.addEventListener('wechatLoginStatusChange', this.handleLoginStatusChange.bind(this));
+        
+        // 标记事件已绑定
+        this.eventsbound = true;
+        console.log('事件绑定完成');
     }
 
     // 容器点击事件处理（事件委托）
@@ -512,10 +522,12 @@ class ArticleGeneratorModule {
         
         this.renderInterface();
         
-        // 重新绑定事件
-        setTimeout(() => {
-            this.bindEvents();
-        }, 100);
+        // 只在必要时重新绑定事件，避免重复绑定
+        if (!this.eventsbound) {
+            setTimeout(() => {
+                this.bindEvents();
+            }, 100);
+        }
     }
 
     // 更新使用情况显示

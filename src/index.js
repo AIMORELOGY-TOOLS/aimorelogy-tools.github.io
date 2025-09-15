@@ -1060,6 +1060,44 @@ async function handlePoll(request, env) {
     const response = await sessionObj.fetch('https://internal/status');
     const data = await response.json();
     
+    // 如果登录成功，需要返回完整的用户信息和token
+    if (data.status === 'success' && data.openid) {
+      console.log('轮询检测到登录成功，准备返回用户信息');
+      
+      // 获取用户信息
+      const userInfo = await getOrCreateUser(env, data.openid, data.wechatUserInfo);
+      console.log('获取到用户信息:', userInfo);
+      
+      // 生成token
+      const token = generateLoginToken(data.openid);
+      const loginTime = new Date().toISOString();
+      const expireTime = Date.now() + (7 * 24 * 60 * 60 * 1000);
+      
+      // 更新用户登录信息
+      await updateUserLastLogin(env, data.openid, loginTime, token, expireTime);
+      
+      // 返回完整的登录成功数据
+      const responseData = {
+        status: 'success',
+        userInfo: {
+          ...userInfo,
+          token: token,
+          expireTime: expireTime,
+          loginTime: Date.now()
+        },
+        token: token
+      };
+      
+      console.log('返回登录成功数据:', responseData);
+      return new Response(JSON.stringify(responseData), {
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders 
+        }
+      });
+    }
+    
+    // 其他状态直接返回
     return new Response(JSON.stringify(data), {
       headers: { 
         'Content-Type': 'application/json',

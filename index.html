@@ -330,19 +330,6 @@
                     </button>
                 </div>
 
-                <!-- Markdown编辑器模块 -->
-                <div class="module-card" data-module="markdown-editor">
-                    <span class="module-icon">📝</span>
-                    <h3 class="module-title">Markdown编辑器</h3>
-                    <p class="module-description">
-                        专业的Markdown编辑器，支持实时预览、AI辅助创作，适合技术文档和博客写作。
-                    </p>
-                    <span class="module-status status-available">现已上线</span>
-                    <button class="module-button btn-primary" onclick="openMarkdownEditor()">
-                        立即使用
-                    </button>
-                </div>
-
                 <!-- 微信公众号排版模块 -->
                 <div class="module-card" data-module="wechat-format">
                     <span class="module-icon">🎨</span>
@@ -353,6 +340,19 @@
                     <span class="module-status status-available">现已上线</span>
                     <button class="module-button btn-primary" onclick="openWechatFormat()">
                         立即使用
+                    </button>
+                </div>
+
+                <!-- 智能写作助手模块 -->
+                <div class="module-card">
+                    <span class="module-icon">✍️</span>
+                    <h3 class="module-title">智能写作助手</h3>
+                    <p class="module-description">
+                        AI驱动的写作助手，提供文章大纲生成、段落扩写、语言润色等功能，提升写作效率和质量。
+                    </p>
+                    <span class="module-status status-coming-soon">即将上线</span>
+                    <button class="module-button btn-disabled" disabled>
+                        敬请期待
                     </button>
                 </div>
 
@@ -467,7 +467,7 @@
                 const moduleType = card.getAttribute('data-module');
                 
                 // 已接入的功能模块列表
-                const availableModules = ['article-generator', 'markdown-editor', 'wechat-format'];
+                const availableModules = ['article-generator', 'wechat-format'];
                 
                 if (userData) {
                     // 用户已登录
@@ -542,17 +542,6 @@
             window.location.href = 'article-generator.html';
         }
 
-        // 打开Markdown编辑器
-        function openMarkdownEditor() {
-            if (!wechatLogin.getCurrentUser()) {
-                alert('请先登录后使用此功能');
-                return;
-            }
-            
-            // 跳转到Markdown编辑器页面
-            window.location.href = 'markdown-editor.html?mode=markdown';
-        }
-
         // 打开微信公众号排版工具
         function openWechatFormat() {
             if (!wechatLogin.getCurrentUser()) {
@@ -561,7 +550,7 @@
             }
             
             // 跳转到微信公众号排版页面
-            window.location.href = 'markdown-editor.html?mode=wechat';
+            window.location.href = 'wechat-format.html';
         }
 
         // 全局函数，供其他模块调用

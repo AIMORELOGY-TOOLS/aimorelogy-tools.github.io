@@ -15,8 +15,8 @@
 
 ## 🌐 在线演示
 
-- **主页演示**: https://jeff010726.github.io/AIMORELOGY-TOOLS/
-- **独立登录页**: https://jeff010726.github.io/AIMORELOGY-TOOLS/wechat-login.html
+- **主页演示**: https://jeff010726.github.io/AITOOLS/
+- **独立登录页**: https://jeff010726.github.io/AITOOLS/wechat-login.html
 
 ## 🏗️ 技术架构
 
@@ -141,8 +141,8 @@ if (loginStatus.isLoggedIn) {
 
 ### 克隆项目
 ```bash
-git clone https://github.com/Jeff010726/AIMORELOGY-TOOLS.git
-cd AIMORELOGY-TOOLS
+git clone https://github.com/Jeff010726/AITOOLS.github.io.git
+cd AITOOLS.github.io
 ```
 
 ### 本地预览
@@ -204,7 +204,7 @@ MIT License
 ## 📞 联系方式
 
 - GitHub: [@Jeff010726](https://github.com/Jeff010726)
-- 项目地址: https://github.com/Jeff010726/AIMORELOGY-TOOLS
+- 项目地址: https://github.com/Jeff010726/AITOOLS.github.io
 
 ---
 

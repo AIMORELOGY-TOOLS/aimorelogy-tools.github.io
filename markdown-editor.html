@@ -47,7 +47,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
     
     <!-- 登录模块 -->
-    <script src="src/wechat-login.js"></script>
+    <script src="sections/wechat-login.js"></script>
     
     <!-- Markdown编辑器模块 -->
     <script src="sections/markdown-editor.js"></script>
@@ -56,9 +56,16 @@
         // 页面初始化
         document.addEventListener('DOMContentLoaded', async function() {
             try {
+                // 创建微信登录实例
+                const wechatLogin = new WeChatLoginModule({
+                    apiBaseUrl: 'https://aimorelogybackend.site'
+                });
+                
                 // 检查登录状态
-                const loginStatus = await checkLoginStatus();
-                if (!loginStatus.isLoggedIn) {
+                await wechatLogin.checkLoginStatus();
+                const currentUser = wechatLogin.getCurrentUser();
+                
+                if (!currentUser) {
                     window.location.href = 'wechat-login.html?redirect=' + encodeURIComponent(window.location.href);
                     return;
                 }
@@ -66,7 +73,8 @@
                 // 初始化Markdown编辑器
                 const container = document.getElementById('app');
                 const markdownEditor = new MarkdownEditorModule({
-                    user: loginStatus.user
+                    user: currentUser,
+                    wechatLogin: wechatLogin
                 });
                 
                 await markdownEditor.init(container);

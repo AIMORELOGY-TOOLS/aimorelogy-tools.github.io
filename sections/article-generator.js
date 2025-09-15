@@ -738,10 +738,25 @@ class ArticleGeneratorModule {
             reader.releaseLock();
         }
         
-        // 如果没有获取到token信息，估算token消耗（大约1个中文字符=1.5个token）
+        // 如果没有获取到token信息，根据官方标准估算token消耗
         if (totalTokens === 0) {
-            totalTokens = Math.ceil(content.length * 1.5);
-            console.log('估算token消耗:', totalTokens, '基于内容长度:', content.length);
+            // 统计中文和英文字符数量
+            const chineseChars = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
+            const englishChars = (content.match(/[a-zA-Z]/g) || []).length;
+            const otherChars = content.length - chineseChars - englishChars;
+            
+            // 根据官方标准计算：1个中文字符≈0.6个token，1个英文字符≈0.3个token
+            totalTokens = Math.ceil(
+                chineseChars * 0.6 + 
+                englishChars * 0.3 + 
+                otherChars * 0.5  // 其他字符（数字、符号等）按0.5估算
+            );
+            
+            console.log('估算token消耗:', totalTokens);
+            console.log('- 中文字符:', chineseChars, '* 0.6 =', chineseChars * 0.6);
+            console.log('- 英文字符:', englishChars, '* 0.3 =', englishChars * 0.3);
+            console.log('- 其他字符:', otherChars, '* 0.5 =', otherChars * 0.5);
+            console.log('- 总内容长度:', content.length);
         }
         
         return totalTokens;

@@ -50,7 +50,11 @@ class WeChatLoginModule {
                         this.onLoginStatusChange(true, userData);
                         return true;
                     } else {
-                        console.log('服务器端验证失败，清除本地数据');
+                        console.log('服务器端验证失败，但保留本地数据以便重试');
+                        // 不立即清除数据，给用户机会重新验证
+                        this.currentUser = userData;
+                        this.onLoginStatusChange(true, userData);
+                        return true;
                     }
                 } else {
                     console.log('Token已过期，清除本地数据');
@@ -62,10 +66,21 @@ class WeChatLoginModule {
             console.log('本地无存储数据');
         }
         
-        // 清除过期或无效数据
+        // 只有在token真正过期时才清除数据
         if (stored) {
-            localStorage.removeItem(this.config.storageKey);
-            console.log('已清除本地存储数据');
+            try {
+                const userData = JSON.parse(stored);
+                if (userData.expireTime && userData.expireTime <= Date.now()) {
+                    localStorage.removeItem(this.config.storageKey);
+                    console.log('Token已过期，已清除本地存储数据');
+                    this.currentUser = null;
+                    this.onLoginStatusChange(false, null);
+                    return false;
+                }
+            } catch (error) {
+                console.error('解析存储数据失败:', error);
+                localStorage.removeItem(this.config.storageKey);
+            }
         }
         
         this.currentUser = null;
@@ -299,11 +314,11 @@ class WeChatLoginModule {
                     }
                 </style>
                 
-                <img class="user-avatar" src="${user.avatar || '/default-avatar.png'}" alt="用户头像" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmMGYwZjAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNNiAyNmMwLTUuNTIzIDQuNDc3LTEwIDEwLTEwczEwIDQuNDc3IDEwIDEwIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPgo='">
+                <img class="user-avatar" src="${user.avatar || user.wechatInfo?.headimgurl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmMGYwZjAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNNiAyNmMwLTUuNTIzIDQuNDc3LTEwIDEwLTEwczEwIDQuNDc3IDEwIDEwIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPgo='}" alt="用户头像" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNmMGYwZjAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxMiIgcj0iNSIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNNiAyNmMwLTUuNTIzIDQuNDc3LTEwIDEwLTEwczEwIDQuNDc3IDEwIDEwIiBmaWxsPSIjOTk5OTk5Ii8+Cjwvc3ZnPgo='">
                 
                 <div class="user-details">
-                    <div class="user-name">${user.nickname}</div>
-                    <div class="user-id">用户ID: ${user.userid || user.openid}</div>
+                    <div class="user-name">${user.nickname || user.wechatInfo?.nickname || '微信用户'}</div>
+                    <div class="user-id">用户ID: ${user.userid || user.openid || '未知'}</div>
                     <div>
                         <span class="user-level">${levelInfo.name}</span>
                     </div>
@@ -846,10 +861,13 @@ class WeChatLoginModule {
         }
         
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/usage_stats?openid=${this.currentUser.openid}`, {
+            const response = await fetch(`${this.config.apiBaseUrl}/get_user_info`, {
+                method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.currentUser.token}`
-                }
+                },
+                body: JSON.stringify({ openid: this.currentUser.openid })
             });
             
             const data = await response.json();

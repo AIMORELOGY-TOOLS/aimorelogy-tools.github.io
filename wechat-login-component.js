@@ -219,7 +219,7 @@
 
             this.pollTimer = setInterval(async () => {
                 try {
-                    const response = await fetch(`${this.config.apiBaseUrl}/poll?sessionId=${this.sessionId}`);
+                    const response = await fetch(`${this.config.apiBaseUrl}/poll?id=${this.sessionId}`);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);

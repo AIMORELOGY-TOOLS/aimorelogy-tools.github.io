@@ -753,6 +753,7 @@ POST /update_article_usage      // 更新文章使用统计
 // 管理员接口
 GET  /admin/list_all_keys       // 获取所有用户键
 GET  /admin/get_user            // 获取单个用户信息
+GET  /admin/get_all_users       // 获取所有用户数据（新接口）
 GET  /admin/get_user_stats      // 获取用户统计
 GET  /admin/get_token_stats     // 获取token统计
 POST /admin/update_user_level   // 更新用户等级
@@ -775,6 +776,18 @@ POST /update_新功能_usage       // 更新使用统计
 GET  /admin/get_新功能_stats    // 获取功能统计
 GET  /admin/get_新功能_list     // 获取功能列表
 POST /admin/manage_新功能       // 管理功能设置
+```
+
+### 后台管理前端API调用
+```javascript
+// 在 AIMORELOGY-TOOLS-BACKSTAGE/js/api.js 中的调用方法
+window.adminAPI.getAllUsersNew()     // 调用 /admin/get_all_users
+window.adminAPI.getUserStats()       // 调用 /admin/get_user_stats  
+window.adminAPI.getTokenStats()      // 调用 /admin/get_token_stats
+
+// 图表数据获取（charts.js中使用）
+await window.adminAPI.getAllUsersNew()  // 用户统计和活跃度图表
+await window.adminAPI.getUserStats()    // 用户等级分布和注册趋势图表
 ```
 
 ### Token计算标准

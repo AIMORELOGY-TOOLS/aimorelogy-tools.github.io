@@ -47,12 +47,20 @@ class WeChatLoginModule {
                     if (isValid) {
                         this.currentUser = userData;
                         console.log('登录状态恢复成功:', userData);
+                        // 重新渲染界面显示用户信息
+                        if (this.container) {
+                            this.render(this.container, true);
+                        }
                         this.onLoginStatusChange(true, userData);
                         return true;
                     } else {
                         console.log('服务器端验证失败，但保留本地数据以便重试');
                         // 不立即清除数据，给用户机会重新验证
                         this.currentUser = userData;
+                        // 重新渲染界面显示用户信息
+                        if (this.container) {
+                            this.render(this.container, true);
+                        }
                         this.onLoginStatusChange(true, userData);
                         return true;
                     }

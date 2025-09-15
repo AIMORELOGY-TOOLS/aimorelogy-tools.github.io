@@ -209,7 +209,7 @@ frontend/
 
 - [完整演示页面](demo.html)
 - [基础演示页面](index.html)
-- [GitHub 源码](https://github.com/Jeff010726/AITOOLS.github.io)
+- [GitHub 源码](https://github.com/AIMORELOGY-TOOLS/aimorelogy-tools.github.io)
 - [后端 API 文档](https://aimorelogybackend.site/)
 
 ## 📄 许可证

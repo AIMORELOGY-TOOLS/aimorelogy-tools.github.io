@@ -10,8 +10,8 @@
 ## 📍 仓库地址
 
 ### 主项目仓库
-- **GitHub**: https://github.com/Jeff010726/AITOOLS.github.io.git
-- **GitHub Pages**: https://jeff010726.github.io/AITOOLS/
+- **GitHub**: https://github.com/AIMORELOGY-TOOLS/aimorelogy-tools.github.io.git
+- **GitHub Pages**: https://tools.aimorelogy.com
 - **本地路径**: `d:/wechat_login/`
 
 ### 后台管理仓库
@@ -849,7 +849,7 @@ async function checkUsageLimit(user, featureName) {
 - 📝 **说明**：Token和文本长度限制功能完整保留，如需启用只需修改对应数值
 
 ### 三地址协调机制
-1. **主项目地址**: https://jeff010726.github.io/AITOOLS/
+1. **主项目地址**: https://tools.aimorelogy.com
 2. **后台地址**: https://jeff010726.github.io/AIMORELOGY-TOOLS-BACKSTAGE/
 3. **API地址**: https://aimorelogybackend.site
 
@@ -861,7 +861,7 @@ async function checkUsageLimit(user, featureName) {
 ### 部署同步检查
 ```bash
 # 检查主项目部署
-curl -I https://jeff010726.github.io/AITOOLS/
+curl -I https://tools.aimorelogy.com
 
 # 检查后台部署
 curl -I https://jeff010726.github.io/AIMORELOGY-TOOLS-BACKSTAGE/

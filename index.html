@@ -330,15 +330,28 @@
                     </button>
                 </div>
 
-                <!-- 公众号内容排版模块 -->
+                <!-- Markdown编辑器模块 -->
                 <div class="module-card" data-module="markdown-editor">
-                    <span class="module-icon">📋</span>
-                    <h3 class="module-title">公众号内容排版</h3>
+                    <span class="module-icon">📝</span>
+                    <h3 class="module-title">Markdown编辑器</h3>
                     <p class="module-description">
-                        专业的Markdown编辑器，支持实时预览、AI辅助创作和微信公众号样式排版。让您的内容更加美观专业。
+                        专业的Markdown编辑器，支持实时预览、AI辅助创作，适合技术文档和博客写作。
                     </p>
                     <span class="module-status status-available">现已上线</span>
                     <button class="module-button btn-primary" onclick="openMarkdownEditor()">
+                        立即使用
+                    </button>
+                </div>
+
+                <!-- 微信公众号排版模块 -->
+                <div class="module-card" data-module="wechat-format">
+                    <span class="module-icon">🎨</span>
+                    <h3 class="module-title">微信公众号排版</h3>
+                    <p class="module-description">
+                        专业的微信公众号内容排版工具，支持多种主题、自定义样式、图片上传和手机预览，让您的公众号文章更加美观。
+                    </p>
+                    <span class="module-status status-available">现已上线</span>
+                    <button class="module-button btn-primary" onclick="openWechatFormat()">
                         立即使用
                     </button>
                 </div>
@@ -454,7 +467,7 @@
                 const moduleType = card.getAttribute('data-module');
                 
                 // 已接入的功能模块列表
-                const availableModules = ['article-generator', 'markdown-editor'];
+                const availableModules = ['article-generator', 'markdown-editor', 'wechat-format'];
                 
                 if (userData) {
                     // 用户已登录
@@ -537,7 +550,18 @@
             }
             
             // 跳转到Markdown编辑器页面
-            window.location.href = 'markdown-editor.html';
+            window.location.href = 'markdown-editor.html?mode=markdown';
+        }
+
+        // 打开微信公众号排版工具
+        function openWechatFormat() {
+            if (!wechatLogin.getCurrentUser()) {
+                alert('请先登录后使用此功能');
+                return;
+            }
+            
+            // 跳转到微信公众号排版页面
+            window.location.href = 'markdown-editor.html?mode=wechat';
         }
 
         // 全局函数，供其他模块调用

@@ -93,7 +93,11 @@ d:/wechat_login/
 ├── wechat-login.html         # 登录页面
 ├── sections/                 # 功能模块
 │   ├── wechat-login.js      # 登录模块
-│   └── article-generator.js  # 文章生成模块
+│   ├── article-generator.js  # 文章生成模块
+│   ├── markdown-editor.js   # Markdown编辑器模块
+│   ├── markdown-editor.css  # Markdown编辑器样式
+│   ├── wechat-format.js     # 微信公众号排版模块
+│   └── wechat-format.css    # 微信公众号排版样式
 ├── src/                     # 后端代码
 │   ├── index.js            # 主入口
 │   └── session.js          # 会话管理
@@ -218,6 +222,69 @@ Response: {
   usage: { daily: 1, total: 1, lastResetDate: "..." },
   tokenUsage: { markdown: { daily: 150, total: 150, ... } },
   message: "Markdown使用次数更新成功"
+}
+```
+
+### 微信公众号排版接口
+
+#### 1. 图片上传
+```javascript
+POST /wechat/upload_image
+Headers: { Authorization: "Bearer token" }
+Body: FormData with image file
+Response: {
+  success: true,
+  imageUrl: "https://图床地址/image.jpg",
+  message: "图片上传成功"
+}
+```
+
+#### 2. 保存排版模板
+```javascript
+POST /wechat/save_template
+Headers: { Authorization: "Bearer token" }
+Body: {
+  name: "模板名称",
+  content: "排版内容HTML",
+  theme: "主题配置",
+  customCSS: "自定义CSS"
+}
+Response: {
+  success: true,
+  templateId: "template_openid_timestamp",
+  message: "模板保存成功"
+}
+```
+
+#### 3. 获取模板列表
+```javascript
+GET /wechat/templates
+Headers: { Authorization: "Bearer token" }
+Response: {
+  success: true,
+  templates: [
+    {
+      id: "模板ID",
+      name: "模板名称",
+      createdAt: "创建时间",
+      updatedAt: "更新时间"
+    }
+  ]
+}
+```
+
+#### 4. 导出排版内容
+```javascript
+POST /wechat/export
+Headers: { Authorization: "Bearer token" }
+Body: {
+  content: "排版内容HTML",
+  format: "html|markdown"
+}
+Response: {
+  success: true,
+  exportedContent: "导出的内容",
+  message: "导出成功"
 }
 ```
 
@@ -951,10 +1018,15 @@ async function checkUsageLimit(user, featureName) {
 
 ### 日常开发
 1. 在本地开发新功能
-2. 测试前后端联调
+2. **注意：涉及微信登录的功能无法本地测试，必须部署后测试**
 3. 提交到对应Git仓库
 4. 部署到生产环境
-5. 验证功能正常
+5. 在线验证功能正常
+
+### 测试环境说明
+- **本地测试限制**：微信登录回调需要HTTPS和已配置的域名，本地无法测试
+- **在线测试必需**：所有涉及用户登录的功能都必须部署到GitHub Pages后测试
+- **测试流程**：开发 → 提交 → 部署 → 在线测试 → 修复 → 重新部署
 
 ### 问题排查
 1. 检查浏览器控制台日志
@@ -962,6 +1034,7 @@ async function checkUsageLimit(user, featureName) {
 3. 验证API接口返回
 4. 检查用户权限和限制
 5. 确认数据结构正确
+6. **重要：微信登录问题只能在线环境排查，本地无法复现**
 
 ## 🚨 关键注意事项
 

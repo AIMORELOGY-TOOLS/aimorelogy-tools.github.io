@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown编辑器 - AIMORELOGY TOOLS</title>
+    <title>Markdown编辑器 & 微信公众号排版 - AIMORELOGY TOOLS</title>
     <link rel="stylesheet" href="sections/markdown-editor.css">
+    <link rel="stylesheet" href="sections/wechat-format.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
@@ -32,7 +33,7 @@
 </head>
 <body>
     <div id="loading" class="loading">
-        <div>正在加载Markdown编辑器...</div>
+        <div>正在加载编辑器...</div>
     </div>
     
     <div id="app" class="hidden">
@@ -52,6 +53,9 @@
     <!-- Markdown编辑器模块 -->
     <script src="sections/markdown-editor.js"></script>
     
+    <!-- 微信公众号排版模块 -->
+    <script src="sections/wechat-format.js"></script>
+    
     <script>
         // 页面初始化
         document.addEventListener('DOMContentLoaded', async function() {
@@ -70,14 +74,48 @@
                     return;
                 }
                 
-                // 初始化Markdown编辑器
-                const container = document.getElementById('app');
-                const markdownEditor = new MarkdownEditorModule({
-                    user: currentUser,
-                    wechatLogin: wechatLogin
-                });
+                // 检查URL参数决定使用哪个编辑器
+                const urlParams = new URLSearchParams(window.location.search);
+                const mode = urlParams.get('mode') || 'markdown';
                 
-                await markdownEditor.init(container);
+                const container = document.getElementById('app');
+                let editor;
+                
+                if (mode === 'wechat') {
+                    // 初始化微信公众号排版工具
+                    editor = new WeChatFormatModule({
+                        apiBaseUrl: 'https://aimorelogybackend.site',
+                        user: currentUser,
+                        wechatLogin: wechatLogin
+                    });
+                } else {
+                    // 初始化Markdown编辑器
+                    editor = new MarkdownEditorModule({
+                        user: currentUser,
+                        wechatLogin: wechatLogin
+                    });
+                }
+                
+                await editor.init(container);
+                
+                // 添加模式切换按钮
+                const switchBtn = document.createElement('button');
+                if (mode === 'markdown') {
+                    switchBtn.innerHTML = '🎨 微信排版';
+                    switchBtn.title = '切换到微信公众号排版模式';
+                    switchBtn.onclick = () => {
+                        window.location.href = '?mode=wechat';
+                    };
+                } else {
+                    switchBtn.innerHTML = '📝 Markdown';
+                    switchBtn.title = '切换到Markdown编辑模式';
+                    switchBtn.onclick = () => {
+                        window.location.href = '?mode=markdown';
+                    };
+                }
+                switchBtn.className = 'btn btn-primary';
+                switchBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);';
+                document.body.appendChild(switchBtn);
                 
                 // 隐藏加载界面，显示应用
                 document.getElementById('loading').classList.add('hidden');

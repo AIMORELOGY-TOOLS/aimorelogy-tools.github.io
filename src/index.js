@@ -57,6 +57,10 @@ export default {
         return await handleUpdateArticleUsage(request, env);
       } else if (url.pathname === '/get_article_usage') {
         return await handleGetArticleUsage(request, env);
+      } else if (url.pathname === '/admin/get_all_users') {
+        return await handleGetAllUsers(request, env);
+      } else if (url.pathname === '/admin/get_token_stats') {
+        return await handleGetTokenStats(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -316,10 +320,43 @@ async function handleUpdateArticleUsage(request, env) {
       user.articleUsage.lastResetDate = today;
     }
 
-    // 更新使用次数
+    // 更新使用次数和token消耗
     if (action === 'article_generation') {
       user.articleUsage.daily += amount;
       user.articleUsage.total += amount;
+      
+      // 初始化token消耗统计
+      if (!user.tokenUsage) {
+        user.tokenUsage = {
+          article: {
+            daily: 0,
+            total: 0,
+            lastResetDate: new Date().toDateString()
+          }
+        };
+      }
+      
+      // 检查是否需要重置每日token计数
+      if (!user.tokenUsage.article) {
+        user.tokenUsage.article = {
+          daily: 0,
+          total: 0,
+          lastResetDate: new Date().toDateString()
+        };
+      }
+      
+      if (user.tokenUsage.article.lastResetDate !== today) {
+        user.tokenUsage.article.daily = 0;
+        user.tokenUsage.article.lastResetDate = today;
+      }
+      
+      // 记录token消耗（从请求体中获取）
+      const tokenConsumed = body.tokenConsumed || 0;
+      if (tokenConsumed > 0) {
+        user.tokenUsage.article.daily += tokenConsumed;
+        user.tokenUsage.article.total += tokenConsumed;
+        console.log(`用户 ${openid} 文章生成消耗token: ${tokenConsumed}`);
+      }
     }
 
     // 更新用户数据
@@ -328,6 +365,7 @@ async function handleUpdateArticleUsage(request, env) {
     return new Response(JSON.stringify({
       success: true,
       usage: user.articleUsage,
+      tokenUsage: user.tokenUsage,
       message: '使用次数更新成功'
     }), {
       headers: {
@@ -350,6 +388,169 @@ async function handleUpdateArticleUsage(request, env) {
     });
   }
 }
+
+// 获取所有用户数据（管理员接口）
+async function handleGetAllUsers(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // 获取所有用户数据
+    const { keys } = await env.WECHAT_KV.list({ prefix: 'user:' });
+    const users = [];
+    
+    for (const key of keys) {
+      const userData = await env.WECHAT_KV.get(key.name);
+      if (userData) {
+        const user = JSON.parse(userData);
+        
+        // 确保用户有完整的统计数据
+        if (!user.articleUsage) {
+          user.articleUsage = { daily: 0, total: 0, lastResetDate: new Date().toDateString() };
+        }
+        if (!user.tokenUsage) {
+          user.tokenUsage = {
+            article: { daily: 0, total: 0, lastResetDate: new Date().toDateString() }
+          };
+        }
+        
+        users.push({
+          openid: user.openid,
+          userid: user.userid,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          level: user.level,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+          articleUsage: user.articleUsage,
+          tokenUsage: user.tokenUsage
+        });
+      }
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      users: users,
+      total: users.length
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+    
+  } catch (error) {
+    console.error('获取用户数据失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 获取token消耗统计（管理员接口）
+async function handleGetTokenStats(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // 获取所有用户数据
+    const { keys } = await env.WECHAT_KV.list({ prefix: 'user:' });
+    let totalTokens = 0;
+    let dailyTokens = 0;
+    let articleTokens = 0;
+    let userStats = [];
+    
+    const today = new Date().toDateString();
+    
+    for (const key of keys) {
+      const userData = await env.WECHAT_KV.get(key.name);
+      if (userData) {
+        const user = JSON.parse(userData);
+        
+        if (user.tokenUsage && user.tokenUsage.article) {
+          const articleUsage = user.tokenUsage.article;
+          
+          // 统计总token消耗
+          totalTokens += articleUsage.total || 0;
+          articleTokens += articleUsage.total || 0;
+          
+          // 统计今日token消耗
+          if (articleUsage.lastResetDate === today) {
+            dailyTokens += articleUsage.daily || 0;
+          }
+          
+          // 用户个人统计
+          userStats.push({
+            openid: user.openid,
+            nickname: user.nickname,
+            level: user.level,
+            articleTokens: articleUsage.total || 0,
+            dailyArticleTokens: articleUsage.lastResetDate === today ? (articleUsage.daily || 0) : 0
+          });
+        }
+      }
+    }
+    
+    // 按token消耗排序
+    userStats.sort((a, b) => b.articleTokens - a.articleTokens);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      stats: {
+        totalTokens,
+        dailyTokens,
+        articleTokens,
+        topUsers: userStats.slice(0, 10) // 返回前10名用户
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+    
+  } catch (error) {
+    console.error('获取token统计失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 导出处理函数
+export default {
+  async fetch(request, env, ctx) {
+    return handleRequest(request, env);
+  }
+};
 
 // 获取文章生成使用次数
 async function handleGetArticleUsage(request, env) {

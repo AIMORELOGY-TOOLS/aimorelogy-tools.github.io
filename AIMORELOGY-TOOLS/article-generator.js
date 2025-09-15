@@ -662,11 +662,11 @@ class ArticleGeneratorModule {
             throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
         }
         
-        // 处理流式响应
-        await this.handleStreamResponse(response);
+        // 处理流式响应并获取token消耗
+        const tokenConsumed = await this.handleStreamResponse(response);
         
-        // 更新使用次数
-        await this.updateUsageCount();
+        // 更新使用次数和token消耗
+        await this.updateUsageCount(tokenConsumed);
     }
 
     // 处理流式响应
@@ -674,6 +674,7 @@ class ArticleGeneratorModule {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let content = '';
+        let totalTokens = 0;
         
         this.showResult();
         const resultContent = this.container.querySelector('#result-content');
@@ -692,7 +693,8 @@ class ArticleGeneratorModule {
                         const data = line.slice(6);
                         
                         if (data === '[DONE]') {
-                            return;
+                            console.log('流式响应完成，总token消耗:', totalTokens);
+                            return totalTokens;
                         }
                         
                         if (data.trim() === '' || data.startsWith(': keep-alive')) {
@@ -708,6 +710,12 @@ class ArticleGeneratorModule {
                                 resultContent.textContent = content;
                                 resultContent.scrollTop = resultContent.scrollHeight;
                             }
+                            
+                            // 获取token使用信息
+                            if (parsed.usage) {
+                                totalTokens = parsed.usage.total_tokens || 0;
+                                console.log('获取到token使用信息:', parsed.usage);
+                            }
                         } catch (e) {
                             // 忽略解析错误
                         }
@@ -717,19 +725,29 @@ class ArticleGeneratorModule {
         } finally {
             reader.releaseLock();
         }
+        
+        // 如果没有获取到token信息，估算token消耗（大约1个中文字符=1.5个token）
+        if (totalTokens === 0) {
+            totalTokens = Math.ceil(content.length * 1.5);
+            console.log('估算token消耗:', totalTokens, '基于内容长度:', content.length);
+        }
+        
+        return totalTokens;
     }
 
     // 更新使用次数
-    async updateUsageCount() {
+    async updateUsageCount(tokenConsumed = 0) {
         try {
             console.log('开始更新使用次数...');
             console.log('当前用户token:', this.currentUser.token);
             console.log('API地址:', `${this.config.apiBaseUrl}/update_article_usage`);
+            console.log('消耗的token数量:', tokenConsumed);
             
             const requestBody = {
                 token: this.currentUser.token,
                 action: 'article_generation',
-                amount: 1
+                amount: 1,
+                tokenConsumed: tokenConsumed
             };
             console.log('请求体:', requestBody);
             

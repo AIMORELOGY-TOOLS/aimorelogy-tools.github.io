@@ -599,8 +599,8 @@ function showUserDetails(user) {
         "daily": 10,                    // 每日总使用次数
         "articleDaily": 10,             // 文章生成每日次数
         "features": ["basic"],          // 可用功能列表
-        "tokenDaily": 5000,             // 每日token限制
-        "maxRequestSize": 1000          // 单次请求最大字符数
+        "tokenDaily": -1,               // 暂不限制token使用量（保留接口）
+        "maxRequestSize": -1            // 暂不限制单次请求大小（保留接口）
     }
 }
 ```
@@ -611,10 +611,10 @@ function showUserDetails(user) {
     "level": "vip",
     "limits": {
         "daily": 50,                    // 每日总使用次数
-        "articleDaily": 50,             // 文章生成每日次数
+        "articleDaily": 30,             // 文章生成每日次数
         "features": ["basic", "advanced"], // 可用功能列表
-        "tokenDaily": 20000,            // 每日token限制
-        "maxRequestSize": 5000          // 单次请求最大字符数
+        "tokenDaily": -1,               // 暂不限制token使用量（保留接口）
+        "maxRequestSize": -1            // 暂不限制单次请求大小（保留接口）
     }
 }
 ```
@@ -625,10 +625,10 @@ function showUserDetails(user) {
     "level": "svip",
     "limits": {
         "daily": 200,                   // 每日总使用次数
-        "articleDaily": 200,            // 文章生成每日次数
+        "articleDaily": 100,            // 文章生成每日次数
         "features": ["basic", "advanced", "premium"], // 可用功能列表
-        "tokenDaily": 100000,           // 每日token限制
-        "maxRequestSize": 20000         // 单次请求最大字符数
+        "tokenDaily": -1,               // 暂不限制token使用量（保留接口）
+        "maxRequestSize": -1            // 暂不限制单次请求大小（保留接口）
     }
 }
 ```
@@ -798,13 +798,12 @@ async function checkUsageLimit(user, featureName) {
         return { allowed: false, reason: '今日使用次数已达上限' };
     }
     
-    // 检查token限制
-    const tokenUsage = user.tokenUsage?.[featureName]?.daily || 0;
-    const tokenLimit = user.limits.tokenDaily;
-    
-    if (tokenLimit !== -1 && tokenUsage >= tokenLimit) {
-        return { allowed: false, reason: '今日token使用量已达上限' };
-    }
+    // Token和文本长度限制暂时不启用，保留接口供将来使用
+    // const tokenUsage = user.tokenUsage?.[featureName]?.daily || 0;
+    // const tokenLimit = user.limits.tokenDaily;
+    // if (tokenLimit !== -1 && tokenUsage >= tokenLimit) {
+    //     return { allowed: false, reason: '今日token使用量已达上限' };
+    // }
     
     return { allowed: true };
 }
@@ -842,6 +841,12 @@ async function checkUsageLimit(user, featureName) {
 5. 确认数据结构正确
 
 ## 🚨 关键注意事项
+
+### 当前限制策略
+- ✅ **使用次数限制**：按等级限制每日使用次数
+- ❌ **Token限制**：暂不启用，接口已保留（tokenDaily: -1）
+- ❌ **文本长度限制**：暂不启用，接口已保留（maxRequestSize: -1）
+- 📝 **说明**：Token和文本长度限制功能完整保留，如需启用只需修改对应数值
 
 ### 三地址协调机制
 1. **主项目地址**: https://jeff010726.github.io/AIMORELOGY-TOOLS/

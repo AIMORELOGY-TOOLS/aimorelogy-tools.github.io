@@ -2126,22 +2126,34 @@ function getUserLimits(level) {
     'normal': {
       daily: 10,
       features: ['basic'],
-      articleDaily: 10  // 文章生成每日限制
+      articleDaily: 10,  // 文章生成每日限制
+      // token和文本长度暂不限制，保留接口
+      tokenDaily: -1,    // 暂不限制token使用量
+      maxRequestSize: -1 // 暂不限制单次请求大小
     },
     'vip': {
       daily: 50,
       features: ['basic', 'advanced'],
-      articleDaily: 30  // VIP用户文章生成限制
+      articleDaily: 30,  // VIP用户文章生成限制
+      // token和文本长度暂不限制，保留接口
+      tokenDaily: -1,    // 暂不限制token使用量
+      maxRequestSize: -1 // 暂不限制单次请求大小
     },
     'svip': {
       daily: 200,
       features: ['basic', 'advanced', 'premium'],
-      articleDaily: 100  // SVIP用户文章生成限制
+      articleDaily: 100, // SVIP用户文章生成限制
+      // token和文本长度暂不限制，保留接口
+      tokenDaily: -1,    // 暂不限制token使用量
+      maxRequestSize: -1 // 暂不限制单次请求大小
     },
     'admin': {
       daily: -1, // 无限制
       features: ['basic', 'advanced', 'premium', 'admin'],
-      articleDaily: -1  // 管理员无限制
+      articleDaily: -1,  // 管理员无限制
+      // token和文本长度暂不限制，保留接口
+      tokenDaily: -1,    // 暂不限制token使用量
+      maxRequestSize: -1 // 暂不限制单次请求大小
     }
   };
   

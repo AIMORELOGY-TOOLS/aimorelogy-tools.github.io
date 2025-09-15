@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试 - 文章生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .debug-title {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+            background: #fee;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            background: #efe;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h2 class="debug-title">文章生成器调试页面</h2>
+        
+        <div class="debug-info" id="login-status">
+            检查登录状态中...
+        </div>
+        
+        <div class="debug-info" id="user-info">
+            用户信息加载中...
+        </div>
+        
+        <div class="debug-info" id="permission-info">
+            权限检查中...
+        </div>
+        
+        <button class="test-btn" onclick="testLogin()">测试登录状态</button>
+        <button class="test-btn" onclick="testPermission()">测试权限检查</button>
+        <button class="test-btn" onclick="testGenerate()">测试生成按钮</button>
+        <button class="test-btn" onclick="testAPI()">测试API连接</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="debug-container">
+        <h3 class="debug-title">微信登录区域</h3>
+        <div id="wechat-login-container"></div>
+    </div>
+
+    <div class="debug-container">
+        <h3 class="debug-title">文章生成器区域</h3>
+        <div id="article-generator-container"></div>
+    </div>
+
+    <!-- 引入模块 -->
+    <script src="sections/wechat-login.js"></script>
+    <script src="sections/article-generator.js"></script>
+    
+    <script>
+        let wechatLogin;
+        let articleGenerator;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始初始化...');
+            
+            try {
+                // 创建微信登录实例
+                wechatLogin = new WeChatLoginModule({
+                    apiBaseUrl: 'https://aimorelogybackend.site'
+                });
+                
+                // 渲染到容器
+                const loginContainer = document.getElementById('wechat-login-container');
+                wechatLogin.render(loginContainer);
+                
+                // 创建文章生成器实例
+                articleGenerator = new ArticleGeneratorModule({
+                    apiBaseUrl: 'https://aimorelogybackend.site'
+                });
+                
+                // 渲染文章生成器
+                const generatorContainer = document.getElementById('article-generator-container');
+                articleGenerator.render(generatorContainer);
+                
+                // 监听登录状态变化
+                document.addEventListener('wechatLoginStatusChange', function(event) {
+                    const { isLoggedIn, userData } = event.detail;
+                    console.log('登录状态变化:', isLoggedIn, userData);
+                    
+                    updateDebugInfo();
+                    
+                    if (isLoggedIn) {
+                        articleGenerator.setCurrentUser(userData);
+                        articleGenerator.render(generatorContainer);
+                    } else {
+                        articleGenerator.setCurrentUser(null);
+                        articleGenerator.render(generatorContainer);
+                    }
+                });
+                
+                // 初始更新调试信息
+                setTimeout(updateDebugInfo, 500);
+                
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showError('初始化失败: ' + error.message);
+            }
+        });
+        
+        function updateDebugInfo() {
+            const currentUser = wechatLogin ? wechatLogin.getCurrentUser() : null;
+            
+            // 更新登录状态
+            document.getElementById('login-status').innerHTML = 
+                `登录状态: ${currentUser ? '已登录' : '未登录'}`;
+            
+            // 更新用户信息
+            if (currentUser) {
+                document.getElementById('user-info').innerHTML = 
+                    `用户信息: ${JSON.stringify(currentUser, null, 2)}`;
+            } else {
+                document.getElementById('user-info').innerHTML = '用户信息: 未登录';
+            }
+            
+            // 更新权限信息
+            if (currentUser && articleGenerator) {
+                const permission = articleGenerator.checkUsagePermission();
+                document.getElementById('permission-info').innerHTML = 
+                    `权限检查: ${JSON.stringify(permission, null, 2)}`;
+            } else {
+                document.getElementById('permission-info').innerHTML = '权限检查: 无法检查（未登录或生成器未初始化）';
+            }
+        }
+        
+        function testLogin() {
+            const currentUser = wechatLogin ? wechatLogin.getCurrentUser() : null;
+            showResult('登录测试', currentUser ? '已登录' : '未登录', currentUser);
+        }
+        
+        function testPermission() {
+            if (!articleGenerator) {
+                showError('文章生成器未初始化');
+                return;
+            }
+            
+            const permission = articleGenerator.checkUsagePermission();
+            showResult('权限测试', permission.allowed ? '有权限' : '无权限', permission);
+        }
+        
+        function testGenerate() {
+            if (!articleGenerator) {
+                showError('文章生成器未初始化');
+                return;
+            }
+            
+            try {
+                // 模拟点击生成按钮
+                const generateBtn = document.querySelector('#generate-btn');
+                if (generateBtn) {
+                    console.log('找到生成按钮，模拟点击...');
+                    generateBtn.click();
+                    showSuccess('已触发生成按钮点击事件');
+                } else {
+                    showError('未找到生成按钮 (#generate-btn)');
+                }
+            } catch (error) {
+                showError('测试生成失败: ' + error.message);
+            }
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch('https://aimorelogybackend.site/health');
+                const data = await response.json();
+                showResult('API测试', '连接成功', data);
+            } catch (error) {
+                showError('API测试失败: ' + error.message);
+            }
+        }
+        
+        function showResult(title, status, data) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'success';
+            resultDiv.innerHTML = `
+                <strong>${title}:</strong> ${status}<br>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function showError(message) {
+            const resultsDiv = document.getElementById('test-results');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            resultsDiv.appendChild(errorDiv);
+        }
+        
+        function showSuccess(message) {
+            const resultsDiv = document.getElementById('test-results');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            resultsDiv.appendChild(successDiv);
+        }
+    </script>
+</body>
+</html>

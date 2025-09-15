@@ -76,14 +76,17 @@ class WeChatLoginModule {
     // 验证token有效性
     async validateToken(token) {
         try {
-            console.log('验证token:', token);
+            // 清理token，移除可能的空白字符
+            const cleanToken = token ? token.trim() : '';
+            console.log('验证token:', cleanToken, '长度:', cleanToken.length);
+            
             const response = await fetch(`${this.config.apiBaseUrl}/validate_token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${cleanToken}`
                 },
-                body: JSON.stringify({ token })
+                body: JSON.stringify({ token: cleanToken })
             });
             
             console.log('验证响应状态:', response.status);
@@ -99,7 +102,7 @@ class WeChatLoginModule {
                 const updatedData = {
                     ...currentData,
                     ...data.user,
-                    token: token,  // 保持当前token
+                    token: cleanToken,  // 保持清理后的token
                     expireTime: currentData.expireTime,  // 保持过期时间
                     loginTime: currentData.loginTime     // 保持登录时间
                 };

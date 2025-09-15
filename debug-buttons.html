@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按钮调试页面</title>
+</head>
+<body>
+    <h1>按钮调试页面</h1>
+    
+    <div id="wechat-login-container"></div>
+    <div id="article-generator-container"></div>
+    
+    <script>
+        // 直接在页面中测试按钮功能
+        console.log('开始调试按钮功能...');
+        
+        // 模拟用户数据
+        const mockUserData = {
+            openid: "test123",
+            userid: "测试用户",
+            level: "normal",
+            nickname: "测试用户",
+            avatar: "",
+            token: "test-token",
+            expireTime: Date.now() + 86400000,
+            loginTime: Date.now(),
+            usage: { daily: 0, total: 0 }
+        };
+        
+        // 创建简单的测试按钮
+        function createTestButtons() {
+            const container = document.getElementById('wechat-login-container');
+            container.innerHTML = `
+                <div style="padding: 20px; border: 1px solid #ccc; margin: 10px;">
+                    <h3>登录组件测试</h3>
+                    <button id="test-logout" onclick="testLogout()" style="padding: 10px; margin: 5px;">测试退出按钮</button>
+                    <button id="test-refresh" onclick="testRefresh()" style="padding: 10px; margin: 5px;">测试刷新按钮</button>
+                </div>
+            `;
+            
+            const articleContainer = document.getElementById('article-generator-container');
+            articleContainer.innerHTML = `
+                <div style="padding: 20px; border: 1px solid #ccc; margin: 10px;">
+                    <h3>文章生成器测试</h3>
+                    <button id="test-generate" onclick="testGenerate()" style="padding: 10px; margin: 5px;">测试生成按钮</button>
+                    <button id="test-copy" onclick="testCopy()" style="padding: 10px; margin: 5px;">测试复制按钮</button>
+                </div>
+            `;
+        }
+        
+        // 测试函数
+        function testLogout() {
+            console.log('测试退出按钮被点击！');
+            alert('退出按钮工作正常！');
+        }
+        
+        function testRefresh() {
+            console.log('测试刷新按钮被点击！');
+            alert('刷新按钮工作正常！');
+        }
+        
+        function testGenerate() {
+            console.log('测试生成按钮被点击！');
+            alert('生成按钮工作正常！');
+        }
+        
+        function testCopy() {
+            console.log('测试复制按钮被点击！');
+            alert('复制按钮工作正常！');
+        }
+        
+        // 页面加载完成后创建测试按钮
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM加载完成，创建测试按钮...');
+            createTestButtons();
+        });
+        
+        // 如果DOMContentLoaded已经触发，直接创建
+        if (document.readyState === 'loading') {
+            console.log('文档正在加载...');
+        } else {
+            console.log('文档已加载完成，直接创建测试按钮...');
+            createTestButtons();
+        }
+    </script>
+    
+    <hr>
+    
+    <h2>加载实际组件进行测试</h2>
+    <div id="real-login-container"></div>
+    <div id="real-article-container"></div>
+    
+    <script src="sections/wechat-login.js"></script>
+    <script src="sections/article-generator.js"></script>
+    
+    <script>
+        // 测试实际组件
+        setTimeout(() => {
+            console.log('开始测试实际组件...');
+            
+            // 模拟登录状态
+            localStorage.setItem('wechat_user_info', JSON.stringify(mockUserData));
+            
+            // 创建登录组件
+            const loginModule = new WeChatLoginModule();
+            const loginContainer = document.getElementById('real-login-container');
+            loginModule.render(loginContainer);
+            
+            // 创建文章生成器
+            const articleModule = new ArticleGeneratorModule();
+            const articleContainer = document.getElementById('real-article-container');
+            articleModule.render(articleContainer);
+            
+        }, 1000);
+    </script>
+</body>
+</html>

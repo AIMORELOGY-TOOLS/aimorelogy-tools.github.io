@@ -58,7 +58,11 @@ class ArticleGeneratorModule {
 
         this.container = container;
         this.renderInterface();
-        this.bindEvents();
+        
+        // 使用 setTimeout 确保 DOM 更新完成后再绑定事件
+        setTimeout(() => {
+            this.bindEvents();
+        }, 0);
     }
 
     // 渲染界面
@@ -413,28 +417,105 @@ class ArticleGeneratorModule {
 
     // 绑定事件
     bindEvents() {
+        console.log('开始绑定事件...');
+        console.log('容器元素:', this.container);
+        
+        if (!this.container) {
+            console.error('容器元素不存在，无法绑定事件');
+            return;
+        }
+        
+        // 使用事件委托方式绑定按钮事件，避免DOM更新后事件丢失
+        this.container.removeEventListener('click', this.handleContainerClick);
+        this.container.addEventListener('click', this.handleContainerClick.bind(this));
+        
+        // 直接查找并绑定按钮（作为备用方案）
         const generateBtn = this.container.querySelector('#generate-btn');
         const copyBtn = this.container.querySelector('#copy-btn');
         
+        console.log('查找按钮结果:', {
+            generateBtn: !!generateBtn,
+            copyBtn: !!copyBtn,
+            allButtons: this.container.querySelectorAll('button').length
+        });
+        
         if (generateBtn) {
-            generateBtn.addEventListener('click', () => this.handleGenerate());
+            console.log('绑定生成按钮点击事件');
+            // 移除旧的事件监听器
+            generateBtn.replaceWith(generateBtn.cloneNode(true));
+            const newGenerateBtn = this.container.querySelector('#generate-btn');
+            
+            newGenerateBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('生成按钮被点击！- onclick方式');
+                this.handleGenerate();
+                return false;
+            };
+        } else {
+            console.error('未找到生成按钮 (#generate-btn)');
         }
         
         if (copyBtn) {
-            copyBtn.addEventListener('click', () => this.handleCopy());
+            console.log('绑定复制按钮点击事件');
+            // 移除旧的事件监听器
+            copyBtn.replaceWith(copyBtn.cloneNode(true));
+            const newCopyBtn = this.container.querySelector('#copy-btn');
+            
+            newCopyBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('复制按钮被点击！- onclick方式');
+                this.handleCopy();
+                return false;
+            };
         }
         
         // 监听登录状态变化
-        document.addEventListener('wechatLoginStatusChange', (event) => {
-            const { isLoggedIn, userData } = event.detail;
-            if (isLoggedIn) {
-                this.setCurrentUser(userData);
-                this.renderInterface();
-            } else {
-                this.setCurrentUser(null);
-                this.renderInterface();
-            }
-        });
+        document.removeEventListener('wechatLoginStatusChange', this.handleLoginStatusChange);
+        document.addEventListener('wechatLoginStatusChange', this.handleLoginStatusChange.bind(this));
+    }
+
+    // 容器点击事件处理（事件委托）
+    handleContainerClick(event) {
+        const target = event.target;
+        
+        // 检查是否点击了生成按钮或其子元素
+        if (target.id === 'generate-btn' || target.closest('#generate-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('生成按钮被点击！- 事件委托方式');
+            this.handleGenerate();
+            return false;
+        }
+        
+        // 检查是否点击了复制按钮或其子元素
+        if (target.id === 'copy-btn' || target.closest('#copy-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('复制按钮被点击！- 事件委托方式');
+            this.handleCopy();
+            return false;
+        }
+    }
+
+    // 登录状态变化处理
+    handleLoginStatusChange(event) {
+        const { isLoggedIn, userData } = event.detail;
+        console.log('登录状态变化:', isLoggedIn, userData);
+        
+        if (isLoggedIn) {
+            this.setCurrentUser(userData);
+        } else {
+            this.setCurrentUser(null);
+        }
+        
+        this.renderInterface();
+        
+        // 重新绑定事件
+        setTimeout(() => {
+            this.bindEvents();
+        }, 100);
     }
 
     // 更新使用情况显示
@@ -457,18 +538,28 @@ class ArticleGeneratorModule {
 
     // 处理生成文章
     async handleGenerate() {
+        console.log('handleGenerate 被调用');
+        console.log('当前用户:', this.currentUser);
+        console.log('是否正在生成:', this.isGenerating);
+        
         if (!this.currentUser) {
+            console.log('用户未登录，显示错误');
             this.showError('请先登录');
             return;
         }
         
         if (this.isGenerating) {
+            console.log('正在生成中，忽略请求');
             return;
         }
         
         // 检查使用权限
+        console.log('开始检查使用权限...');
         const permission = this.checkUsagePermission();
+        console.log('权限检查结果:', permission);
+        
         if (!permission.allowed) {
+            console.log('权限不足，显示错误:', permission.reason);
             this.showError(permission.reason);
             return;
         }
@@ -506,7 +597,10 @@ class ArticleGeneratorModule {
 
     // 检查使用权限
     checkUsagePermission() {
+        console.log('检查使用权限，当前用户:', this.currentUser);
+        
         if (!this.currentUser) {
+            console.log('权限检查失败：用户未登录');
             return { allowed: false, reason: '请先登录' };
         }
         
@@ -514,10 +608,19 @@ class ArticleGeneratorModule {
         const limits = this.usageLimits[userLevel];
         const dailyUsage = this.currentUser.articleUsage?.daily || 0;
         
+        console.log('权限检查详情:', {
+            userLevel,
+            limits,
+            dailyUsage,
+            articleUsage: this.currentUser.articleUsage
+        });
+        
         if (limits.daily !== -1 && dailyUsage >= limits.daily) {
+            console.log('权限检查失败：使用次数已达上限');
             return { allowed: false, reason: `今日使用次数已达上限（${limits.daily}次）` };
         }
         
+        console.log('权限检查通过');
         return { allowed: true };
     }
 

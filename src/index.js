@@ -49,6 +49,8 @@ export default {
         return await handleAdminDeleteUser(request, env);
       } else if (url.pathname === '/admin/clear_all_users') {
         return await handleAdminClearAllUsers(request, env);
+      } else if (url.pathname === '/admin/update_user_level') {
+        return await handleUpdateUserLevel(request, env);
       } else if (url.pathname === '/validate_token') {
         return await handleValidateToken(request, env);
       } else if (url.pathname === '/update_article_usage') {
@@ -494,15 +496,46 @@ async function handleValidateToken(request, env) {
     }
 
     // 解析token获取openid
-    const tokenParts = token.split(':');
-    console.log('Token分割结果:', tokenParts);
-    
-    if (tokenParts.length !== 3) {
-      console.log('Token格式无效，长度:', tokenParts.length);
+    let openid;
+    let decodedToken;
+    try {
+      // 清理token，移除可能的空白字符
+      const cleanToken = token.trim();
+      console.log('清理后的token长度:', cleanToken.length);
+      
+      // 尝试base64解码
+      try {
+        decodedToken = atob(cleanToken);
+        console.log('解码后的token:', decodedToken);
+      } catch (decodeError) {
+        console.log('Base64解码失败，可能是普通格式token:', decodeError);
+        decodedToken = cleanToken;
+      }
+      
+      const tokenParts = decodedToken.split(':');
+      console.log('Token分割结果:', tokenParts, '长度:', tokenParts.length);
+      
+      if (tokenParts.length !== 3) {
+        console.log('Token格式无效，期望3部分，实际:', tokenParts.length);
+        return new Response(JSON.stringify({
+          success: false,
+          valid: false,
+          error: 'token格式无效'
+        }), {
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        });
+      }
+      
+      openid = tokenParts[0];
+    } catch (error) {
+      console.log('Token解析失败:', error);
       return new Response(JSON.stringify({
         success: false,
         valid: false,
-        error: 'token格式无效'
+        error: 'token解析失败'
       }), {
         headers: {
           'Content-Type': 'application/json',
@@ -510,8 +543,7 @@ async function handleValidateToken(request, env) {
         }
       });
     }
-
-    const openid = tokenParts[0];
+    
     console.log('解析出的openid:', openid);
     
     // 从KV存储中获取用户数据
@@ -540,14 +572,49 @@ async function handleValidateToken(request, env) {
       expireTime: user.expireTime
     });
     
-    // 检查token是否匹配
-    console.log('Token比较:', {
-      received: token,
-      stored: user.token,
-      match: user.token === token
-    });
+    // 检查token是否匹配 - 清理并比较token
+    const receivedToken = token.trim();
+    const storedToken = user.token ? user.token.trim() : '';
     
-    if (user.token !== token) {
+    // 尝试多种比较方式
+    let areEqual = false;
+    
+    // 1. 直接比较
+    areEqual = receivedToken === storedToken;
+    
+    // 2. 如果直接比较失败，尝试解码后比较
+    if (!areEqual && receivedToken && storedToken) {
+      try {
+        const receivedDecoded = atob(receivedToken);
+        const storedDecoded = atob(storedToken);
+        areEqual = receivedDecoded === storedDecoded;
+        console.log('解码后比较结果:', areEqual);
+      } catch (error) {
+        console.log('解码比较失败:', error);
+      }
+    }
+
+    console.log('--- TOKEN VALIDATION DEEP DIVE ---');
+    console.log(`Received Token: "${receivedToken}" (Length: ${receivedToken.length})`);
+    console.log(`Stored Token  : "${storedToken}" (Length: ${storedToken.length})`);
+    console.log(`Direct Comparison Result: ${areEqual}`);
+
+    if (!areEqual && storedToken) {
+        // 进一步分析差异
+        console.log('Tokens do not match. Analyzing differences...');
+        const maxLen = Math.max(receivedToken.length, storedToken.length);
+        for (let i = 0; i < Math.min(maxLen, 10); i++) { // 只检查前10个字符避免日志过长
+            const charReceived = receivedToken[i] || 'END';
+            const charStored = storedToken[i] || 'END';
+            if (charReceived !== charStored) {
+                console.log(`First difference at index ${i}: Received: '${charReceived}' (code: ${receivedToken.charCodeAt(i) || 'N/A'}), Stored: '${charStored}' (code: ${storedToken.charCodeAt(i) || 'N/A'})`);
+                break;
+            }
+        }
+    }
+    console.log('--- END TOKEN VALIDATION DEEP DIVE ---');
+    
+    if (!areEqual) {
       console.log('Token不匹配');
       return new Response(JSON.stringify({
         success: true,
@@ -575,15 +642,27 @@ async function handleValidateToken(request, env) {
       });
     }
 
+    // 确保用户数据包含所有必需字段
+    if (!user.articleUsage) {
+      user.articleUsage = {
+        total: 0,
+        daily: 0,
+        lastResetDate: new Date().toDateString()
+      };
+    }
+    
+    // 确保用户有正确的limits
+    if (!user.limits || !user.limits.articleDaily) {
+      user.limits = getUserLimits(user.level || 'normal');
+    }
+    
+    // 更新用户数据到KV存储
+    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+    
     return new Response(JSON.stringify({
       success: true,
       valid: true,
-      user: {
-        openid: user.openid,
-        nickname: user.nickname,
-        level: user.level,
-        usage: user.usage
-      }
+      user: user  // 返回完整的用户数据
     }), {
       headers: {
         'Content-Type': 'application/json',
@@ -900,9 +979,16 @@ async function handleFinalizeLogin(request, env) {
       // 生成登录 token
       const token = generateLoginToken(data.openid);
       const loginTime = new Date().toISOString();
+      const expireTime = Date.now() + (7 * 24 * 60 * 60 * 1000); // 7天过期
       
-      // 更新最后登录时间
-      await updateUserLastLogin(env, data.openid, loginTime);
+      // 更新最后登录时间和token
+      console.log('准备更新用户登录信息:', {
+        openid: data.openid,
+        loginTime: loginTime,
+        token: token,
+        expireTime: expireTime
+      });
+      await updateUserLastLogin(env, data.openid, loginTime, token, expireTime);
       console.log('登录完成处理结束');
       
       return new Response(JSON.stringify({
@@ -1164,8 +1250,18 @@ function generateLoginToken(openid) {
   const randomStr = crypto.randomUUID();
   const tokenData = `${openid}:${timestamp}:${randomStr}`;
   
-  // 简单的 base64 编码作为 token
-  return btoa(tokenData);
+  // 使用 base64 编码作为 token，确保没有额外的空白字符
+  const token = btoa(tokenData);
+  console.log('生成token:', {
+    openid: openid,
+    timestamp: timestamp,
+    randomStr: randomStr,
+    tokenData: tokenData,
+    token: token,
+    tokenLength: token.length
+  });
+  
+  return token;
 }
 
 async function getWechatAccessToken(env) {
@@ -1495,18 +1591,42 @@ async function getOrCreateUser(env, openid, wechatUserInfo = null) {
     
     if (existingUser) {
       const user = JSON.parse(existingUser);
+      let needUpdate = false;
       
       // 如果是现有用户但没有userid，为其生成userid
       if (!user.userid && wechatUserInfo) {
         const userid = await generateUniqueUserId(env, wechatUserInfo.nickname, openid);
         user.userid = userid;
+        needUpdate = true;
         
         // 更新用户信息
         if (wechatUserInfo.nickname) user.nickname = wechatUserInfo.nickname;
         if (wechatUserInfo.headimgurl) user.avatar = wechatUserInfo.headimgurl;
         
-        await env.WECHAT_KV.put(userKey, JSON.stringify(user));
         console.log(`为现有用户 ${openid} 生成userid: ${userid}`);
+      }
+      
+      // 确保现有用户有articleUsage字段
+      if (!user.articleUsage) {
+        user.articleUsage = {
+          total: 0,
+          daily: 0,
+          lastResetDate: new Date().toISOString().split('T')[0]
+        };
+        needUpdate = true;
+        console.log(`为现有用户 ${openid} 添加articleUsage字段`);
+      }
+      
+      // 确保现有用户的limits包含articleDaily字段
+      const currentLimits = getUserLimits(user.level || 'normal');
+      if (!user.limits || !user.limits.articleDaily) {
+        user.limits = currentLimits;
+        needUpdate = true;
+        console.log(`为现有用户 ${openid} 更新limits字段，等级: ${user.level || 'normal'}`);
+      }
+      
+      if (needUpdate) {
+        await env.WECHAT_KV.put(userKey, JSON.stringify(user));
       }
       
       return user;
@@ -1539,6 +1659,12 @@ async function getOrCreateUser(env, openid, wechatUserInfo = null) {
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       usage: {
+        total: 0,
+        daily: 0,
+        lastResetDate: new Date().toISOString().split('T')[0]
+      },
+      // 添加文章使用统计
+      articleUsage: {
         total: 0,
         daily: 0,
         lastResetDate: new Date().toISOString().split('T')[0]
@@ -1585,16 +1711,46 @@ async function getUserInfo(env, openid) {
   }
 }
 
-// 更新用户最后登录时间
-async function updateUserLastLogin(env, openid, loginTime) {
+// 更新用户最后登录时间和token
+async function updateUserLastLogin(env, openid, loginTime, token = null, expireTime = null) {
   try {
+    console.log('updateUserLastLogin被调用:', {
+      openid: openid,
+      loginTime: loginTime,
+      hasToken: !!token,
+      tokenLength: token ? token.length : 0,
+      expireTime: expireTime
+    });
+    
     const userKey = `user:${openid}`;
     const userData = await env.WECHAT_KV.get(userKey);
+    console.log('从KV获取的用户数据存在:', !!userData);
     
     if (userData) {
       const user = JSON.parse(userData);
       user.lastLoginAt = loginTime;
+      
+      // 如果提供了token，保存token和过期时间
+      if (token) {
+        user.token = token;
+        user.expireTime = expireTime;
+        user.loginTime = Date.now(); // 添加数字格式的登录时间
+        console.log(`保存用户token: ${openid}, token长度: ${token.length}, 过期时间: ${expireTime}`);
+      }
+      
       await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+      console.log('用户数据已更新到KV存储');
+      
+      // 验证保存是否成功
+      const savedData = await env.WECHAT_KV.get(userKey);
+      const savedUser = JSON.parse(savedData);
+      console.log('验证保存结果:', {
+        hasToken: !!savedUser.token,
+        tokenMatch: savedUser.token === token,
+        expireTime: savedUser.expireTime
+      });
+    } else {
+      console.log('警告：用户数据不存在，无法更新token');
     }
   } catch (error) {
     console.error('更新最后登录时间失败:', error);
@@ -1696,23 +1852,65 @@ function getUserLimits(level) {
   const limits = {
     'normal': {
       daily: 10,
-      features: ['basic']
+      features: ['basic'],
+      articleDaily: 10  // 文章生成每日限制
     },
     'vip': {
       daily: 50,
-      features: ['basic', 'advanced']
+      features: ['basic', 'advanced'],
+      articleDaily: 30  // VIP用户文章生成限制
     },
     'svip': {
       daily: 200,
-      features: ['basic', 'advanced', 'premium']
+      features: ['basic', 'advanced', 'premium'],
+      articleDaily: 100  // SVIP用户文章生成限制
     },
     'admin': {
       daily: -1, // 无限制
-      features: ['basic', 'advanced', 'premium', 'admin']
+      features: ['basic', 'advanced', 'premium', 'admin'],
+      articleDaily: -1  // 管理员无限制
     }
   };
   
   return limits[level] || limits['normal'];
+}
+
+// 更新用户等级和对应的使用限制
+async function updateUserLevel(env, openid, newLevel) {
+  try {
+    const userKey = `user:${openid}`;
+    const userData = await env.WECHAT_KV.get(userKey);
+    
+    if (!userData) {
+      throw new Error('用户不存在');
+    }
+    
+    const user = JSON.parse(userData);
+    const oldLevel = user.level;
+    
+    // 更新用户等级
+    user.level = newLevel;
+    
+    // 更新对应的使用限制
+    user.limits = getUserLimits(newLevel);
+    
+    // 保存更新后的用户数据
+    await env.WECHAT_KV.put(userKey, JSON.stringify(user));
+    
+    console.log(`用户 ${openid} 等级从 ${oldLevel} 更新为 ${newLevel}`);
+    console.log(`新的使用限制: 普通功能 ${user.limits.daily}/天, 文章生成 ${user.limits.articleDaily}/天`);
+    
+    return {
+      success: true,
+      oldLevel: oldLevel,
+      newLevel: newLevel,
+      limits: user.limits
+    };
+    
+  } catch (error) {
+    console.error('更新用户等级失败:', error);
+    throw error;
+  }
 }
 
 // 从token中提取openid
@@ -2011,6 +2209,108 @@ async function handleAdminDeleteUser(request, env) {
     });
   } catch (error) {
     console.error('删除用户失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 处理用户等级更新
+async function handleUpdateUserLevel(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '只支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const requestData = await request.json();
+    const { openid, newLevel, adminToken } = requestData;
+
+    // 验证管理员权限（这里可以添加更严格的验证）
+    if (!adminToken || adminToken !== 'admin_secret_token') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '无管理员权限'
+      }), {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 验证参数
+    if (!openid || !newLevel) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少必要参数: openid 和 newLevel'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 验证等级有效性
+    const validLevels = ['normal', 'vip', 'svip', 'admin'];
+    if (!validLevels.includes(newLevel)) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `无效的用户等级: ${newLevel}，有效等级: ${validLevels.join(', ')}`
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 更新用户等级
+    const result = await updateUserLevel(env, openid, newLevel);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: `用户等级更新成功`,
+      data: result,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('更新用户等级失败:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message

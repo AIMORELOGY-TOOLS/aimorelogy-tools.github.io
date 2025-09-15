@@ -61,6 +61,8 @@ export default {
         return await handleGetAllUsers(request, env);
       } else if (url.pathname === '/admin/get_token_stats') {
         return await handleGetTokenStats(request, env);
+      } else if (url.pathname === '/admin/get_token_history') {
+        return await handleGetTokenHistory(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -361,7 +363,9 @@ async function handleUpdateArticleUsage(request, env) {
       user.tokenUsage.article.daily += tokenConsumed;
       user.tokenUsage.article.total += tokenConsumed;
       
+      // 更新历史记录（新增功能）
       if (tokenConsumed > 0) {
+        await updateUserTokenHistory(env, openid, tokenConsumed);
         console.log(`用户 ${openid} 文章生成消耗token: ${tokenConsumed}, 今日总计: ${user.tokenUsage.article.daily}, 历史总计: ${user.tokenUsage.article.total}`);
       } else {
         console.log(`用户 ${openid} 文章生成，tokenConsumed为0，但已确保tokenUsage字段存在`);
@@ -2691,6 +2695,140 @@ async function handleAdminClearAllUsers(request, env) {
         ...corsHeaders
       }
     });
+  }
+}
+
+// 新增：获取7天token消耗历史数据
+async function handleGetTokenHistory(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // 获取所有用户数据
+    const { keys } = await env.WECHAT_KV.list({ prefix: 'user:' });
+    const users = [];
+    
+    for (const key of keys) {
+      const userData = await env.WECHAT_KV.get(key.name);
+      if (userData) {
+        const user = JSON.parse(userData);
+        users.push(user);
+      }
+    }
+
+    // 生成过去7天的日期
+    const dates = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD格式
+    }
+
+    // 计算每天的token消耗总量
+    const dailyConsumption = {};
+    dates.forEach(date => {
+      dailyConsumption[date] = 0;
+    });
+
+    // 从历史记录中获取数据（如果存在）
+    for (const user of users) {
+      if (user.tokenUsage && user.tokenUsage.article && user.tokenUsage.article.history) {
+        user.tokenUsage.article.history.forEach(record => {
+          if (dailyConsumption.hasOwnProperty(record.date)) {
+            dailyConsumption[record.date] += record.tokens;
+          }
+        });
+      }
+    }
+
+    // 今天的数据从当前daily字段获取
+    const todayStr = today.toISOString().split('T')[0];
+    if (dailyConsumption.hasOwnProperty(todayStr)) {
+      let todayTotal = 0;
+      users.forEach(user => {
+        if (user.tokenUsage && user.tokenUsage.article && user.tokenUsage.article.daily) {
+          todayTotal += user.tokenUsage.article.daily;
+        }
+      });
+      dailyConsumption[todayStr] = todayTotal;
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      dates: dates,
+      consumption: dates.map(date => dailyConsumption[date])
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('获取token历史数据失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 新增：更新用户token历史记录的辅助函数
+async function updateUserTokenHistory(env, openid, tokenConsumed) {
+  if (tokenConsumed <= 0) return;
+
+  try {
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+    const today = new Date().toISOString().split('T')[0];
+
+    // 初始化历史记录结构
+    if (!user.tokenUsage) user.tokenUsage = {};
+    if (!user.tokenUsage.article) user.tokenUsage.article = {};
+    if (!user.tokenUsage.article.history) user.tokenUsage.article.history = [];
+
+    // 查找今天的记录
+    let todayRecord = user.tokenUsage.article.history.find(record => record.date === today);
+    
+    if (todayRecord) {
+      todayRecord.tokens += tokenConsumed;
+    } else {
+      // 添加新的今日记录
+      user.tokenUsage.article.history.push({
+        date: today,
+        tokens: tokenConsumed
+      });
+    }
+
+    // 只保留最近7天的记录
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const cutoffDate = sevenDaysAgo.toISOString().split('T')[0];
+    
+    user.tokenUsage.article.history = user.tokenUsage.article.history
+      .filter(record => record.date > cutoffDate)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // 保存更新后的用户数据
+    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+    
+  } catch (error) {
+    console.error('更新用户token历史记录失败:', error);
   }
 }
 

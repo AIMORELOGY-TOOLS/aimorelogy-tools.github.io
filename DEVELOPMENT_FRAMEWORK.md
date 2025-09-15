@@ -230,6 +230,31 @@ Response: {
 }
 ```
 
+#### 4. Token历史数据（新增）
+```javascript
+GET /admin/get_token_history
+Response: {
+  success: true,
+  dates: ["2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-13", "2025-09-14", "2025-09-15"],
+  consumption: [0, 0, 0, 0, 0, 0, 1153]
+}
+```
+**功能说明**:
+- 获取最近7天的token消耗历史数据
+- 用于后台管理系统的token消耗趋势图表
+- 历史日期如无消耗记录则显示0
+- 当天数据从用户的daily字段实时计算
+- 系统自动维护7天历史记录，超过7天的数据会被清理
+
+**前端调用方法**:
+```javascript
+// 在 AIMORELOGY-TOOLS-BACKSTAGE/js/api.js 中
+const tokenHistory = await window.adminAPI.getTokenHistory();
+if (tokenHistory.success) {
+    console.log('Token历史数据:', tokenHistory.dates, tokenHistory.consumption);
+}
+```
+
 #### 4. 更新用户等级
 ```javascript
 POST /admin/update_user_level
@@ -756,6 +781,7 @@ GET  /admin/get_user            // 获取单个用户信息
 GET  /admin/get_all_users       // 获取所有用户数据（新接口）
 GET  /admin/get_user_stats      // 获取用户统计
 GET  /admin/get_token_stats     // 获取token统计
+GET  /admin/get_token_history   // 获取7天token历史数据（新增）
 POST /admin/update_user_level   // 更新用户等级
 
 // 系统接口
@@ -784,10 +810,12 @@ POST /admin/manage_新功能       // 管理功能设置
 window.adminAPI.getAllUsersNew()     // 调用 /admin/get_all_users
 window.adminAPI.getUserStats()       // 调用 /admin/get_user_stats  
 window.adminAPI.getTokenStats()      // 调用 /admin/get_token_stats
+window.adminAPI.getTokenHistory()    // 调用 /admin/get_token_history（新增）
 
 // 图表数据获取（charts.js中使用）
 await window.adminAPI.getAllUsersNew()  // 用户统计和活跃度图表
 await window.adminAPI.getUserStats()    // 用户等级分布和注册趋势图表
+await window.adminAPI.getTokenHistory() // token消耗趋势图表（新增）
 ```
 
 ### Token计算标准

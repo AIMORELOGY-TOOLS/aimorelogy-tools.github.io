@@ -323,7 +323,11 @@ class WeChatLoginModule {
     bindUserInfoEvents() {
         console.log('开始绑定用户信息按钮事件...');
         
-        // 使用setTimeout确保DOM已经渲染完成
+        // 使用事件委托方式绑定按钮事件
+        this.container.removeEventListener('click', this.handleUserInfoClick);
+        this.container.addEventListener('click', this.handleUserInfoClick.bind(this));
+        
+        // 使用setTimeout确保DOM已经渲染完成后再进行直接绑定（作为备用）
         setTimeout(() => {
             // 绑定退出按钮
             const logoutBtn = this.container.querySelector('#wechat-logout-btn');
@@ -376,6 +380,46 @@ class WeChatLoginModule {
                 console.log('刷新按钮事件已绑定 - onclick方式');
             }
         }, 100);
+    }
+
+    // 用户信息区域点击事件处理（事件委托）
+    handleUserInfoClick(event) {
+        const target = event.target;
+        
+        // 检查是否点击了退出按钮
+        if (target.id === 'wechat-logout-btn' || target.closest('#wechat-logout-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('退出按钮被点击 - 事件委托方式');
+            this.logout();
+            return false;
+        }
+        
+        // 检查是否点击了刷新按钮
+        if (target.id === 'wechat-refresh-btn' || target.closest('#wechat-refresh-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('刷新按钮被点击 - 事件委托方式');
+            
+            const refreshBtn = this.container.querySelector('#wechat-refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '⏳';
+                
+                this.refreshUserData().then(success => {
+                    if (success) {
+                        console.log('用户数据已刷新');
+                        this.renderUserInfo();
+                    }
+                }).catch(error => {
+                    console.error('刷新失败:', error);
+                }).finally(() => {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '🔄';
+                });
+            }
+            return false;
+        }
     }
 
     // 显示登录弹窗

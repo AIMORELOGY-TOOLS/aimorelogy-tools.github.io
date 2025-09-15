@@ -425,18 +425,27 @@ class ArticleGeneratorModule {
             return;
         }
         
+        // 使用事件委托方式绑定按钮事件，避免DOM更新后事件丢失
+        this.container.removeEventListener('click', this.handleContainerClick);
+        this.container.addEventListener('click', this.handleContainerClick.bind(this));
+        
+        // 直接查找并绑定按钮（作为备用方案）
         const generateBtn = this.container.querySelector('#generate-btn');
         const copyBtn = this.container.querySelector('#copy-btn');
         
         console.log('查找按钮结果:', {
-            generateBtn: generateBtn,
-            copyBtn: copyBtn,
-            containerHTML: this.container.innerHTML.substring(0, 200) + '...'
+            generateBtn: !!generateBtn,
+            copyBtn: !!copyBtn,
+            allButtons: this.container.querySelectorAll('button').length
         });
         
         if (generateBtn) {
             console.log('绑定生成按钮点击事件');
-            generateBtn.onclick = (e) => {
+            // 移除旧的事件监听器
+            generateBtn.replaceWith(generateBtn.cloneNode(true));
+            const newGenerateBtn = this.container.querySelector('#generate-btn');
+            
+            newGenerateBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('生成按钮被点击！- onclick方式');
@@ -445,12 +454,15 @@ class ArticleGeneratorModule {
             };
         } else {
             console.error('未找到生成按钮 (#generate-btn)');
-            console.log('容器内所有按钮:', this.container.querySelectorAll('button'));
         }
         
         if (copyBtn) {
             console.log('绑定复制按钮点击事件');
-            copyBtn.onclick = (e) => {
+            // 移除旧的事件监听器
+            copyBtn.replaceWith(copyBtn.cloneNode(true));
+            const newCopyBtn = this.container.querySelector('#copy-btn');
+            
+            newCopyBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('复制按钮被点击！- onclick方式');
@@ -460,24 +472,50 @@ class ArticleGeneratorModule {
         }
         
         // 监听登录状态变化
-        document.addEventListener('wechatLoginStatusChange', (event) => {
-            const { isLoggedIn, userData } = event.detail;
-            if (isLoggedIn) {
-                this.setCurrentUser(userData);
-                this.renderInterface();
-                // 重新绑定事件
-                setTimeout(() => {
-                    this.bindEvents();
-                }, 0);
-            } else {
-                this.setCurrentUser(null);
-                this.renderInterface();
-                // 重新绑定事件
-                setTimeout(() => {
-                    this.bindEvents();
-                }, 0);
-            }
-        });
+        document.removeEventListener('wechatLoginStatusChange', this.handleLoginStatusChange);
+        document.addEventListener('wechatLoginStatusChange', this.handleLoginStatusChange.bind(this));
+    }
+
+    // 容器点击事件处理（事件委托）
+    handleContainerClick(event) {
+        const target = event.target;
+        
+        // 检查是否点击了生成按钮或其子元素
+        if (target.id === 'generate-btn' || target.closest('#generate-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('生成按钮被点击！- 事件委托方式');
+            this.handleGenerate();
+            return false;
+        }
+        
+        // 检查是否点击了复制按钮或其子元素
+        if (target.id === 'copy-btn' || target.closest('#copy-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('复制按钮被点击！- 事件委托方式');
+            this.handleCopy();
+            return false;
+        }
+    }
+
+    // 登录状态变化处理
+    handleLoginStatusChange(event) {
+        const { isLoggedIn, userData } = event.detail;
+        console.log('登录状态变化:', isLoggedIn, userData);
+        
+        if (isLoggedIn) {
+            this.setCurrentUser(userData);
+        } else {
+            this.setCurrentUser(null);
+        }
+        
+        this.renderInterface();
+        
+        // 重新绑定事件
+        setTimeout(() => {
+            this.bindEvents();
+        }, 100);
     }
 
     // 更新使用情况显示

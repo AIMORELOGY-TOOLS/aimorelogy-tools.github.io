@@ -1883,16 +1883,15 @@ async function importUsers(users, env) {
 ## 🎨 AI图片生成功能模块 (2025-09-16 新增)
 
 ### 功能概述
-AI图片生成功能基于豆包Seedream 4.0模型，提供文字描述转图片的智能生成服务。用户可以通过自然语言描述生成高质量的图片，支持多种尺寸和风格选择。
+AI图片生成功能基于豆包Seedream 4.0模型，提供文字描述转图片的智能生成服务。用户可以通过自然语言描述生成高质量的图片，支持多种尺寸选择。
 
 ### 核心特性
 1. **豆包Seedream 4.0**: 基于字节跳动最新的图片生成模型
 2. **多种尺寸**: 支持1K、2K、4K三种分辨率
-3. **风格选择**: 支持写实、艺术、卡通、动漫四种风格
-4. **水印控制**: 可选择是否添加AI生成水印
-5. **即时下载**: 24小时有效下载链接，提醒用户及时保存
-6. **独立统计**: 与文章生成完全分离的使用次数和Token统计
-7. **等级限制**: 普通用户3次/天，VIP 10次/天，SVIP 20次/天，管理员无限制
+3. **水印控制**: 可选择是否添加AI生成水印
+4. **即时下载**: 24小时有效下载链接，提醒用户及时保存
+5. **独立统计**: 与文章生成完全分离的使用次数和Token统计
+6. **等级限制**: 普通用户3次/天，VIP 10次/天，SVIP 20次/天，管理员无限制
 
 ### 文件结构
 ```
@@ -1902,7 +1901,7 @@ AI图片生成功能基于豆包Seedream 4.0模型，提供文字描述转图片
 │   └── image-generator.js        // 图片生成JavaScript模块
 └── index.html                    // 主页（已添加图片生成入口）
 
-后端项目 (aimorelogy-tools-backstage)
+后端项目 (wechat-login-worker)
 └── src/
     └── index.js                  // 后端API（已包含图片生成接口）
 ```
@@ -1976,6 +1975,14 @@ Response: {
 }
 ```
 
+### 豆包API配置
+```javascript
+// 豆包API密钥和配置
+apiKey: '1f2c09b5-72ed-4f9b-9e77-c53b39a5a91b'
+baseUrl: 'https://ark.cn-beijing.volces.com/api/v3/images/generations'
+model: 'doubao-seedream-4-0-250828'
+```
+
 ### 数据结构扩展
 用户数据新增字段：
 ```javascript
@@ -2029,14 +2036,14 @@ const requestBody = {
   size: size,
   response_format: 'url',
   watermark: watermark,
-  stream: false
+  sequential_image_generation: 'disabled'  // 禁用流式响应
 };
 
 const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
+    'Authorization': 'Bearer 1f2c09b5-72ed-4f9b-9e77-c53b39a5a91b'
   },
   body: JSON.stringify(requestBody)
 });
@@ -2049,14 +2056,26 @@ const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/ge
 - 图片预览和下载功能
 - 完整的错误处理和用户提示
 - 使用情况实时显示
-- 参数设置面板（尺寸、风格、水印）
+- 参数设置面板（尺寸、水印）
+
+### 后台管理集成
+#### 仪表盘统计
+- 图片生成总数统计
+- 每日图片生成统计
+- 图片生成Token消耗统计
+
+#### 用户管理
+- 用户列表显示图片生成使用情况
+- 用户详情显示图片生成统计
+- 支持不同等级的图片生成限制显示
 
 ### 注意事项
 1. 图片链接24小时有效，用户需及时下载
 2. 使用次数与文章生成完全独立统计
 3. Token消耗单独记录和统计
-4. 支持多种图片尺寸，但消耗Token不同
+4. 支持多种图片尺寸，但消耗Token相同
 5. 管理员可通过后台查看详细统计数据
+6. 图片不在服务器存储，只提供下载链接
 
 ### 部署状态
 - ✅ 前端页面已部署到 GitHub Pages
@@ -2064,3 +2083,4 @@ const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/ge
 - ✅ 豆包API已集成并测试
 - ✅ 用户权限和限制已配置
 - ✅ 统计功能已完善
+- ✅ 后台管理系统已更新

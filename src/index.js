@@ -3924,7 +3924,7 @@ async function generateImageWithDoubao(prompt, size, watermark, env) {
   try {
     // 豆包API配置
     const apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
-    const apiKey = env.DOUBAO_API_KEY || '1f2c09b5-72ed-4f9b-9e77-c53b39a5a91b'; // 从环境变量获取
+    const apiKey = '1f2c09b5-72ed-4f9b-9e77-c53b39a5a91b'; // 使用提供的API密钥
     
     const requestBody = {
       model: 'doubao-seedream-4-0-250828',
@@ -3932,10 +3932,12 @@ async function generateImageWithDoubao(prompt, size, watermark, env) {
       size: size,
       response_format: 'url',
       watermark: watermark,
-      stream: false
+      stream: false,
+      sequential_image_generation: 'disabled'
     };
 
     console.log('调用豆包API生成图片:', { prompt, size, watermark });
+    console.log('请求体:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -3946,26 +3948,34 @@ async function generateImageWithDoubao(prompt, size, watermark, env) {
       body: JSON.stringify(requestBody)
     });
 
+    console.log('豆包API响应状态:', response.status);
+    console.log('响应头:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('豆包API调用失败:', response.status, errorText);
-      throw new Error(`豆包API调用失败: ${response.status} ${response.statusText}`);
+      throw new Error(`豆包API调用失败: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('豆包API响应:', data);
+    console.log('豆包API响应数据:', JSON.stringify(data, null, 2));
 
     if (data.error) {
       throw new Error(data.error.message || '图片生成失败');
     }
 
-    if (!data.data || !data.data[0] || !data.data[0].url) {
-      throw new Error('API返回数据格式错误');
+    if (!data.data || !data.data[0]) {
+      throw new Error('API返回数据格式错误：缺少图片数据');
+    }
+
+    const imageData = data.data[0];
+    if (!imageData.url) {
+      throw new Error('API返回数据格式错误：缺少图片URL');
     }
 
     return {
       success: true,
-      imageUrl: data.data[0].url,
+      imageUrl: imageData.url,
       tokenConsumed: data.usage?.total_tokens || 0
     };
 

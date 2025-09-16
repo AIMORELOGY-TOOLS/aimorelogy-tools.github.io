@@ -772,7 +772,7 @@ async function handleValidateToken(request, env) {
     }
     
     // 更新用户数据到KV存储
-    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+    await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
     
     return new Response(JSON.stringify({
       success: true,

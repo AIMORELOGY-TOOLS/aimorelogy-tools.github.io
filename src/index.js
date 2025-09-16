@@ -1,5 +1,14 @@
 // 微信登录 Cloudflare Worker 主入口
 import { Session } from './session.js';
+import { 
+  getChinaDateString, 
+  getChinaTimeString, 
+  shouldResetDaily, 
+  initializeDailyUsage, 
+  resetDailyCount, 
+  checkAndResetAllDailyStats 
+} from './china-time-utils.js';
+import { handleDailyReset, handleDailyResetStatus } from './daily-reset-api.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -63,6 +72,10 @@ export default {
         return await handleGetTokenStats(request, env);
       } else if (url.pathname === '/admin/get_token_history') {
         return await handleGetTokenHistory(request, env);
+      } else if (url.pathname === '/admin/daily_reset') {
+        return await handleDailyReset(request, env);
+      } else if (url.pathname === '/admin/daily_reset_status') {
+        return await handleDailyResetStatus(request, env);
       } else if (url.pathname === '/markdown_process') {
         return await handleMarkdownProcess(request, env);
       } else if (url.pathname === '/update_markdown_usage') {
@@ -315,15 +328,14 @@ async function handleUpdateArticleUsage(request, env) {
       user.articleUsage = {
         daily: 0,
         total: 0,
-        lastResetDate: new Date().toDateString()
+        lastResetDate: getChinaDateString()
       };
     }
 
-    // 检查是否需要重置每日计数
-    const today = new Date().toDateString();
-    if (user.articleUsage.lastResetDate !== today) {
+    // 检查是否需要重置每日计数 (基于中国时间)
+    if (shouldResetDaily(user.articleUsage.lastResetDate)) {
       user.articleUsage.daily = 0;
-      user.articleUsage.lastResetDate = today;
+      user.articleUsage.lastResetDate = getChinaDateString();
     }
 
     // 更新使用次数和token消耗
@@ -337,7 +349,7 @@ async function handleUpdateArticleUsage(request, env) {
           article: {
             daily: 0,
             total: 0,
-            lastResetDate: new Date().toDateString()
+            lastResetDate: getChinaDateString()
           }
         };
         console.log(`为用户 ${openid} 初始化tokenUsage字段`);
@@ -348,14 +360,14 @@ async function handleUpdateArticleUsage(request, env) {
         user.tokenUsage.article = {
           daily: 0,
           total: 0,
-          lastResetDate: new Date().toDateString()
+          lastResetDate: getChinaDateString()
         };
         console.log(`为用户 ${openid} 初始化tokenUsage.article字段`);
       }
       
-      if (user.tokenUsage.article.lastResetDate !== today) {
+      if (shouldResetDaily(user.tokenUsage.article.lastResetDate)) {
         user.tokenUsage.article.daily = 0;
-        user.tokenUsage.article.lastResetDate = today;
+        user.tokenUsage.article.lastResetDate = getChinaDateString();
         console.log(`重置用户 ${openid} 的每日token计数`);
       }
       
@@ -430,11 +442,11 @@ async function handleGetAllUsers(request, env) {
         
         // 确保用户有完整的统计数据
         if (!user.articleUsage) {
-          user.articleUsage = { daily: 0, total: 0, lastResetDate: new Date().toDateString() };
+          user.articleUsage = { daily: 0, total: 0, lastResetDate: getChinaDateString() };
         }
         if (!user.tokenUsage) {
           user.tokenUsage = {
-            article: { daily: 0, total: 0, lastResetDate: new Date().toDateString() }
+            article: { daily: 0, total: 0, lastResetDate: getChinaDateString() }
           };
         }
         
@@ -2140,19 +2152,36 @@ async function validateUserToken(token, env) {
     // 检查token是否匹配
     const storedToken = user.token ? user.token.trim() : '';
     
+    console.log('validateUserToken: token比较', {
+      receivedLength: cleanToken.length,
+      storedLength: storedToken.length,
+      match: cleanToken === storedToken
+    });
+    
     if (cleanToken !== storedToken) {
       // 尝试解码后比较
       try {
         const receivedDecoded = atob(cleanToken);
         const storedDecoded = atob(storedToken);
+        
+        console.log('validateUserToken: 解码后比较', {
+          receivedDecoded: receivedDecoded.substring(0, 30) + '...',
+          storedDecoded: storedDecoded.substring(0, 30) + '...',
+          match: receivedDecoded === storedDecoded
+        });
+        
         if (receivedDecoded !== storedDecoded) {
-          console.log('validateUserToken: token不匹配');
+          console.log('validateUserToken: 解码后token仍不匹配');
           return null;
         }
+        
+        console.log('validateUserToken: 解码后token匹配成功');
       } catch (error) {
-        console.log('validateUserToken: token比较失败');
+        console.log('validateUserToken: token解码比较失败:', error);
         return null;
       }
+    } else {
+      console.log('validateUserToken: token直接匹配成功');
     }
 
     // 检查token是否过期

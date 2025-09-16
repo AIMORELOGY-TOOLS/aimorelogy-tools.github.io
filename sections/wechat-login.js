@@ -101,43 +101,56 @@ class WeChatLoginModule {
         try {
             // 清理token，移除可能的空白字符
             const cleanToken = token ? token.trim() : '';
-            console.log('验证token:', cleanToken, '长度:', cleanToken.length);
+            console.log('验证token:', cleanToken.substring(0, 20) + '...', '长度:', cleanToken.length);
             
             const response = await fetch(`${this.config.apiBaseUrl}/validate_token`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cleanToken}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ token: cleanToken })
             });
             
             console.log('验证响应状态:', response.status);
-            const data = await response.json();
-            console.log('验证响应数据:', JSON.stringify(data, null, 2));
             
-            // 如果验证成功且返回了完整用户数据，更新本地存储
-            if (data.success && data.valid && data.user) {
-                console.log('Token验证成功，更新本地用户数据');
-                const currentData = JSON.parse(localStorage.getItem(this.config.storageKey) || '{}');
-                
-                // 合并服务器返回的最新数据
-                const updatedData = {
-                    ...currentData,
-                    ...data.user,
-                    token: cleanToken,  // 保持清理后的token
-                    expireTime: currentData.expireTime,  // 保持过期时间
-                    loginTime: currentData.loginTime     // 保持登录时间
-                };
-                
-                localStorage.setItem(this.config.storageKey, JSON.stringify(updatedData));
-                console.log('本地用户数据已更新:', updatedData);
-                
-                // 更新当前用户对象
-                this.currentUser = updatedData;
+            if (!response.ok) {
+                console.error('验证请求失败:', response.status, response.statusText);
+                return false;
             }
             
-            return data.success && data.valid;
+            const data = await response.json();
+            console.log('验证响应数据:', data);
+            
+            // 检查响应结构
+            if (data.success === true && data.valid === true) {
+                console.log('Token验证成功');
+                
+                // 如果返回了完整用户数据，更新本地存储
+                if (data.user) {
+                    console.log('更新本地用户数据');
+                    const currentData = JSON.parse(localStorage.getItem(this.config.storageKey) || '{}');
+                    
+                    // 合并服务器返回的最新数据
+                    const updatedData = {
+                        ...currentData,
+                        ...data.user,
+                        token: cleanToken,  // 保持清理后的token
+                        expireTime: currentData.expireTime,  // 保持过期时间
+                        loginTime: currentData.loginTime     // 保持登录时间
+                    };
+                    
+                    localStorage.setItem(this.config.storageKey, JSON.stringify(updatedData));
+                    console.log('本地用户数据已更新');
+                    
+                    // 更新当前用户对象
+                    this.currentUser = updatedData;
+                }
+                
+                return true;
+            } else {
+                console.log('Token验证失败:', data);
+                return false;
+            }
         } catch (error) {
             console.error('验证token失败:', error);
             return false;

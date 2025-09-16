@@ -676,13 +676,29 @@ class ImageGeneratorModule {
 
     // 显示生成结果
     displayResult(imageUrl, tokenConsumed) {
+        console.log('displayResult被调用，参数:', { imageUrl, tokenConsumed });
+        
         this.currentImageUrl = imageUrl;
         
         const resultContainer = this.container.querySelector('#result-container');
         const generatedImage = this.container.querySelector('#generated-image');
         
-        if (generatedImage) {
+        console.log('找到的DOM元素:', { 
+            resultContainer: !!resultContainer, 
+            generatedImage: !!generatedImage 
+        });
+        
+        if (generatedImage && imageUrl) {
+            console.log('设置图片src:', imageUrl);
             generatedImage.src = imageUrl;
+            generatedImage.onload = () => {
+                console.log('图片加载成功');
+            };
+            generatedImage.onerror = (error) => {
+                console.error('图片加载失败:', error);
+            };
+        } else {
+            console.error('无法设置图片:', { generatedImage: !!generatedImage, imageUrl });
         }
         
         if (resultContainer) {

@@ -80,6 +80,14 @@ export default {
         return await handleMarkdownProcess(request, env);
       } else if (url.pathname === '/update_markdown_usage') {
         return await handleUpdateMarkdownUsage(request, env);
+      } else if (url.pathname === '/generate_image') {
+        return await handleGenerateImage(request, env);
+      } else if (url.pathname === '/update_image_usage') {
+        return await handleUpdateImageUsage(request, env);
+      } else if (url.pathname === '/get_user_stats') {
+        return await handleGetUserStats(request, env);
+      } else if (url.pathname === '/admin/get_image_stats') {
+        return await handleGetImageStats(request, env);
       } else if (url.pathname === '/') {
         return await handleHomePage(request);
       } else {
@@ -3335,6 +3343,637 @@ async function loadMarkdownDocument(openid, documentId, env) {
     return {
       success: false,
       error: error.message
+    };
+  }
+}
+
+// 图片生成相关API
+
+// 处理图片生成请求
+async function handleGenerateImage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '仅支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { token, prompt, size = '2K', watermark = true } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    if (!prompt || prompt.trim() === '') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '请输入图片描述'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 验证用户token
+    const user = await validateUserToken(token, env);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户未登录或token无效'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 检查用户图片生成权限和使用限制
+    const canUse = await checkImageUsageLimit(user);
+    if (!canUse.allowed) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: canUse.reason
+      }), {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 调用豆包API生成图片
+    const imageResult = await generateImageWithDoubao(prompt, size, watermark, env);
+    
+    if (!imageResult.success) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: imageResult.error
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 更新用户图片生成使用次数
+    await updateImageUsageCount(user.openid, 1, imageResult.tokenConsumed || 0, env);
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        url: imageResult.imageUrl,
+        size: size,
+        prompt: prompt,
+        watermark: watermark
+      },
+      message: '图片生成成功'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('图片生成失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || '图片生成失败，请稍后重试'
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 更新图片生成使用次数
+async function handleUpdateImageUsage(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '仅支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { token, amount = 1, tokenConsumed = 0 } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 验证用户token
+    const user = await validateUserToken(token, env);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户未登录或token无效'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 更新使用次数
+    await updateImageUsageCount(user.openid, amount, tokenConsumed, env);
+
+    // 获取更新后的用户数据
+    const updatedUserData = await env.WECHAT_KV.get(`user:${user.openid}`);
+    const updatedUser = JSON.parse(updatedUserData);
+
+    return new Response(JSON.stringify({
+      success: true,
+      usage: updatedUser.imageUsage,
+      tokenUsage: updatedUser.tokenUsage,
+      message: '图片生成使用次数更新成功'
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('更新图片生成使用次数失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 获取用户统计信息（包含图片生成）
+async function handleGetUserStats(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({
+      success: false,
+      error: '仅支持POST请求'
+    }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { token } = body;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '缺少token参数'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 验证用户token
+    const user = await validateUserToken(token, env);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '用户未登录或token无效'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
+    // 确保用户有完整的统计数据
+    let needUpdate = false;
+    const today = getChinaDateString();
+
+    // 初始化图片使用统计
+    if (!user.imageUsage) {
+      user.imageUsage = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+      needUpdate = true;
+    }
+
+    // 检查是否需要重置每日计数
+    if (shouldResetDaily(user.imageUsage.lastResetDate)) {
+      user.imageUsage.daily = 0;
+      user.imageUsage.lastResetDate = today;
+      needUpdate = true;
+    }
+
+    // 初始化图片token使用统计
+    if (!user.tokenUsage) user.tokenUsage = {};
+    if (!user.tokenUsage.image) {
+      user.tokenUsage.image = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+      needUpdate = true;
+    }
+
+    // 检查是否需要重置每日token计数
+    if (shouldResetDaily(user.tokenUsage.image.lastResetDate)) {
+      user.tokenUsage.image.daily = 0;
+      user.tokenUsage.image.lastResetDate = today;
+      needUpdate = true;
+    }
+
+    if (needUpdate) {
+      await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
+    }
+
+    // 计算图片生成限制
+    let imageLimit = 3; // 默认普通用户
+    switch (user.level) {
+      case 'vip':
+        imageLimit = 10;
+        break;
+      case 'svip':
+        imageLimit = 20;
+        break;
+      case 'admin':
+        imageLimit = -1; // 无限制
+        break;
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      openid: user.openid,
+      userid: user.userid,
+      nickname: user.nickname,
+      level: user.level,
+      articleUsage: user.articleUsage,
+      imageUsage: user.imageUsage,
+      image_daily_count: user.imageUsage.daily,
+      image_daily_limit: imageLimit,
+      tokenUsage: user.tokenUsage
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+
+  } catch (error) {
+    console.error('获取用户统计信息失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 管理员获取图片生成统计
+async function handleGetImageStats(request, env) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // 获取所有用户数据
+    const { keys } = await env.WECHAT_KV.list({ prefix: 'user:' });
+    let totalImages = 0;
+    let dailyImages = 0;
+    let imageTokens = 0;
+    let userStats = [];
+    
+    const today = getChinaDateString();
+    
+    for (const key of keys) {
+      const userData = await env.WECHAT_KV.get(key.name);
+      if (userData) {
+        const user = JSON.parse(userData);
+        
+        if (user.imageUsage) {
+          // 统计总图片生成次数
+          totalImages += user.imageUsage.total || 0;
+          
+          // 统计今日图片生成次数
+          if (user.imageUsage.lastResetDate === today) {
+            dailyImages += user.imageUsage.daily || 0;
+          }
+        }
+        
+        if (user.tokenUsage && user.tokenUsage.image) {
+          const imageTokenUsage = user.tokenUsage.image;
+          
+          // 统计图片生成token消耗
+          imageTokens += imageTokenUsage.total || 0;
+          
+          // 用户个人统计
+          userStats.push({
+            openid: user.openid,
+            nickname: user.nickname,
+            level: user.level,
+            imageCount: user.imageUsage?.total || 0,
+            dailyImageCount: user.imageUsage?.lastResetDate === today ? (user.imageUsage?.daily || 0) : 0,
+            imageTokens: imageTokenUsage.total || 0,
+            dailyImageTokens: imageTokenUsage.lastResetDate === today ? (imageTokenUsage.daily || 0) : 0
+          });
+        }
+      }
+    }
+    
+    // 按图片生成次数排序
+    userStats.sort((a, b) => b.imageCount - a.imageCount);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      stats: {
+        totalImages,
+        dailyImages,
+        imageTokens,
+        topUsers: userStats.slice(0, 10) // 返回前10名用户
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+    
+  } catch (error) {
+    console.error('获取图片生成统计失败:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
+    });
+  }
+}
+
+// 检查图片生成使用限制
+async function checkImageUsageLimit(user) {
+  const today = getChinaDateString();
+  
+  // 初始化图片使用统计
+  if (!user.imageUsage) {
+    user.imageUsage = {
+      daily: 0,
+      total: 0,
+      lastResetDate: today
+    };
+  }
+  
+  // 检查是否需要重置每日计数
+  if (shouldResetDaily(user.imageUsage.lastResetDate)) {
+    user.imageUsage.daily = 0;
+    user.imageUsage.lastResetDate = today;
+  }
+  
+  // 获取用户等级对应的图片生成限制
+  let dailyLimit = 3; // 默认普通用户
+  switch (user.level) {
+    case 'vip':
+      dailyLimit = 10;
+      break;
+    case 'svip':
+      dailyLimit = 20;
+      break;
+    case 'admin':
+      dailyLimit = -1; // 无限制
+      break;
+  }
+  
+  // 检查每日使用次数
+  if (dailyLimit !== -1 && user.imageUsage.daily >= dailyLimit) {
+    return { 
+      allowed: false, 
+      reason: `今日图片生成次数已达上限 (${dailyLimit}次)，请明天再试或升级VIP` 
+    };
+  }
+  
+  return { allowed: true };
+}
+
+// 更新图片生成使用次数
+async function updateImageUsageCount(openid, amount, tokenConsumed, env) {
+  try {
+    const userData = await env.WECHAT_KV.get(`user:${openid}`);
+    if (!userData) {
+      throw new Error('用户不存在');
+    }
+
+    const user = JSON.parse(userData);
+    const today = getChinaDateString();
+
+    // 初始化图片使用统计
+    if (!user.imageUsage) {
+      user.imageUsage = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+    }
+
+    // 检查是否需要重置每日计数
+    if (shouldResetDaily(user.imageUsage.lastResetDate)) {
+      user.imageUsage.daily = 0;
+      user.imageUsage.lastResetDate = today;
+      console.log(`重置用户 ${openid} 的每日图片生成计数`);
+    }
+
+    // 更新使用次数
+    user.imageUsage.daily += amount;
+    user.imageUsage.total += amount;
+
+    // 初始化并更新token使用量
+    if (!user.tokenUsage) user.tokenUsage = {};
+    if (!user.tokenUsage.image) {
+      user.tokenUsage.image = {
+        daily: 0,
+        total: 0,
+        lastResetDate: today
+      };
+    }
+
+    // 检查是否需要重置每日token计数
+    if (shouldResetDaily(user.tokenUsage.image.lastResetDate)) {
+      user.tokenUsage.image.daily = 0;
+      user.tokenUsage.image.lastResetDate = today;
+      console.log(`重置用户 ${openid} 的每日图片生成token计数`);
+    }
+
+    // 更新token消耗
+    user.tokenUsage.image.daily += tokenConsumed;
+    user.tokenUsage.image.total += tokenConsumed;
+
+    console.log(`用户 ${openid} 图片生成，次数: +${amount}, token: +${tokenConsumed}, 今日总计: ${user.imageUsage.daily}, token总计: ${user.tokenUsage.image.daily}`);
+
+    // 保存用户数据
+    await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+
+  } catch (error) {
+    console.error('更新图片生成使用次数失败:', error);
+    throw error;
+  }
+}
+
+// 调用豆包API生成图片
+async function generateImageWithDoubao(prompt, size, watermark, env) {
+  try {
+    // 豆包API配置
+    const apiUrl = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
+    const apiKey = env.DOUBAO_API_KEY || '1f2c09b5-72ed-4f9b-9e77-c53b39a5a91b'; // 从环境变量获取
+    
+    const requestBody = {
+      model: 'doubao-seedream-4-0-250828',
+      prompt: prompt,
+      size: size,
+      response_format: 'url',
+      watermark: watermark,
+      stream: false
+    };
+
+    console.log('调用豆包API生成图片:', { prompt, size, watermark });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('豆包API调用失败:', response.status, errorText);
+      throw new Error(`豆包API调用失败: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('豆包API响应:', data);
+
+    if (data.error) {
+      throw new Error(data.error.message || '图片生成失败');
+    }
+
+    if (!data.data || !data.data[0] || !data.data[0].url) {
+      throw new Error('API返回数据格式错误');
+    }
+
+    return {
+      success: true,
+      imageUrl: data.data[0].url,
+      tokenConsumed: data.usage?.total_tokens || 0
+    };
+
+  } catch (error) {
+    console.error('豆包图片生成失败:', error);
+    return {
+      success: false,
+      error: error.message || '图片生成失败，请稍后重试'
     };
   }
 }

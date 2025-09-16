@@ -3735,6 +3735,23 @@ async function handleGetImageStats(request, env) {
   }
 
   try {
+    // 验证管理员权限
+    const url = new URL(request.url);
+    const adminToken = url.searchParams.get('adminToken');
+    
+    if (!adminToken || adminToken !== 'admin_secret_token') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: '无管理员权限'
+      }), {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+
     // 获取所有用户数据
     const { keys } = await env.WECHAT_KV.list({ prefix: 'user:' });
     let totalImages = 0;

@@ -2706,8 +2706,24 @@ async function handleGetTokenHistory(request, env) {
       // 从历史记录中获取数据
       if (updatedUser.tokenUsage && updatedUser.tokenUsage.article && updatedUser.tokenUsage.article.history) {
         updatedUser.tokenUsage.article.history.forEach(record => {
-          if (dailyConsumption.hasOwnProperty(record.date)) {
-            dailyConsumption[record.date] += record.tokens;
+          // 处理不同的日期格式
+          let recordDate = record.date;
+          
+          // 如果是旧格式 "Mon Sep 15 2025"，转换为 "2025-09-15"
+          if (recordDate && !recordDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            try {
+              const date = new Date(recordDate);
+              if (!isNaN(date.getTime())) {
+                recordDate = date.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              console.error('日期格式转换失败:', recordDate, e);
+            }
+          }
+          
+          if (dailyConsumption.hasOwnProperty(recordDate)) {
+            dailyConsumption[recordDate] += record.tokens;
+            console.log(`添加历史数据: ${recordDate} = ${record.tokens} tokens`);
           }
         });
       }
@@ -2774,6 +2790,25 @@ async function ensureUserTokenHistory(env, user, todayStr) {
       needsUpdate = true;
     }
 
+    // 修复历史记录中的日期格式
+    if (user.tokenUsage.article.history.length > 0) {
+      user.tokenUsage.article.history.forEach(record => {
+        if (record.date && !record.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          try {
+            const date = new Date(record.date);
+            if (!isNaN(date.getTime())) {
+              const newDate = date.toISOString().split('T')[0];
+              console.log(`修复日期格式: ${record.date} -> ${newDate}`);
+              record.date = newDate;
+              needsUpdate = true;
+            }
+          } catch (e) {
+            console.error('日期格式修复失败:', record.date, e);
+          }
+        }
+      });
+    }
+
     // 检查是否需要将昨天的数据转移到历史记录
     const lastResetDate = user.tokenUsage.article.lastResetDate;
     if (lastResetDate && lastResetDate !== todayStr) {
@@ -2796,14 +2831,25 @@ async function ensureUserTokenHistory(env, user, todayStr) {
       needsUpdate = true;
     }
 
-    // 清理超过7天的历史记录
+    // 清理超过7天的历史记录并排序
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const cutoffDate = sevenDaysAgo.toISOString().split('T')[0];
     
     const originalLength = user.tokenUsage.article.history.length;
     user.tokenUsage.article.history = user.tokenUsage.article.history
-      .filter(record => record.date > cutoffDate)
+      .filter(record => {
+        // 确保日期格式正确后再比较
+        let recordDate = record.date;
+        if (!recordDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          try {
+            recordDate = new Date(recordDate).toISOString().split('T')[0];
+          } catch (e) {
+            return false; // 无效日期，过滤掉
+          }
+        }
+        return recordDate > cutoffDate;
+      })
       .sort((a, b) => a.date.localeCompare(b.date));
     
     if (user.tokenUsage.article.history.length !== originalLength) {
@@ -2813,7 +2859,7 @@ async function ensureUserTokenHistory(env, user, todayStr) {
     // 如果有更新，保存用户数据
     if (needsUpdate) {
       await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
-      console.log(`更新用户 ${user.openid} 的token历史记录`);
+      console.log(`更新用户 ${user.openid} 的token历史记录，修复日期格式`);
     }
     
   } catch (error) {

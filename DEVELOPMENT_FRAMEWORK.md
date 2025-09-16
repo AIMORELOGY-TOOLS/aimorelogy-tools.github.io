@@ -1533,12 +1533,54 @@ window.adminAPI.getAllUsersNew()     // 调用 /admin/get_all_users
 window.adminAPI.getUserStats()       // 调用 /admin/get_user_stats  
 window.adminAPI.getTokenStats()      // 调用 /admin/get_token_stats
 window.adminAPI.getTokenHistory()    // 调用 /admin/get_token_history（新增）
+window.adminAPI.getDailyResetStatus() // 调用 /admin/daily_reset_status（新增）
+window.adminAPI.triggerDailyReset()  // 调用 /admin/daily_reset（新增）
 
 // 图表数据获取（charts.js中使用）
 await window.adminAPI.getAllUsersNew()  // 用户统计和活跃度图表
 await window.adminAPI.getUserStats()    // 用户等级分布和注册趋势图表
 await window.adminAPI.getTokenHistory() // token消耗趋势图表（新增）
 ```
+
+### 每日重置功能 (新增)
+
+#### 自动重置机制
+系统会在每次用户操作时自动检查是否需要重置每日使用次数：
+- **重置时间**: 基于中国时间 (UTC+8) 的日期变更
+- **重置范围**: 所有用户的每日使用次数和token消耗量
+- **重置触发**: 用户进行任何API调用时自动检查并重置
+
+#### 手动重置API
+```javascript
+// 管理员可以手动触发每日重置
+POST /admin/daily_reset
+Headers: { Authorization: 'Bearer admin_secret_token' }
+
+// 检查每日重置状态
+GET /admin/daily_reset_status
+Headers: { Authorization: 'Bearer admin_secret_token' }
+```
+
+#### 中国时间工具函数
+```javascript
+// src/china-time-utils.js 提供的工具函数
+getChinaDateString()           // 获取中国时间日期 (YYYY-MM-DD)
+getChinaTimeString()           // 获取中国时间完整时间戳
+shouldResetDaily(lastResetDate) // 检查是否需要重置
+initializeDailyUsage()         // 初始化每日使用统计
+resetDailyCount(usage)         // 重置单个使用统计
+checkAndResetAllDailyStats(user) // 重置用户所有每日统计
+```
+
+#### 重置逻辑说明
+1. **自动检查**: 每次API调用时检查 `lastResetDate` 是否为今天（中国时间）
+2. **重置操作**: 如果日期不匹配，将 `daily` 计数重置为0，更新 `lastResetDate`
+3. **影响范围**: 
+   - `user.usage.daily` - 总体每日使用次数
+   - `user.articleUsage.daily` - 文章生成每日次数
+   - `user.tokenUsage.*.daily` - 各模块每日token消耗
+   - `user.markdownUsage.daily` - Markdown编辑每日次数
+4. **数据保留**: `total` 总计数据不受影响，历史数据完整保留
 
 ### Token计算标准
 ```javascript

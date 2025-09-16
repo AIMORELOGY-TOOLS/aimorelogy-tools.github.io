@@ -510,7 +510,7 @@ async function handleGetTokenStats(request, env) {
     let articleTokens = 0;
     let userStats = [];
     
-    const today = new Date().toDateString();
+    const today = getChinaDateString();
     
     for (const key of keys) {
       const userData = await env.WECHAT_KV.get(key.name);
@@ -670,15 +670,15 @@ async function handleGetArticleUsage(request, env) {
       user.articleUsage = {
         daily: 0,
         total: 0,
-        lastResetDate: new Date().toDateString()
+        lastResetDate: getChinaDateString()
       };
     }
 
     // 检查是否需要重置每日计数
-    const today = new Date().toDateString();
-    if (user.articleUsage.lastResetDate !== today) {
+    // 检查是否需要重置每日计数 (基于中国时间)
+    if (shouldResetDaily(user.articleUsage.lastResetDate)) {
       user.articleUsage.daily = 0;
-      user.articleUsage.lastResetDate = today;
+      user.articleUsage.lastResetDate = getChinaDateString();
       
       // 更新用户数据
       await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
@@ -774,7 +774,7 @@ async function handleValidateToken(request, env) {
       user.articleUsage = {
         total: 0,
         daily: 0,
-        lastResetDate: new Date().toDateString()
+        lastResetDate: getChinaDateString()
       };
     }
     
@@ -1776,7 +1776,7 @@ async function getOrCreateUser(env, openid, wechatUserInfo = null) {
         user.articleUsage = {
           total: 0,
           daily: 0,
-          lastResetDate: new Date().toISOString().split('T')[0]
+          lastResetDate: getChinaDateString()
         };
         needUpdate = true;
         console.log(`为现有用户 ${openid} 添加articleUsage字段`);
@@ -1826,13 +1826,13 @@ async function getOrCreateUser(env, openid, wechatUserInfo = null) {
       usage: {
         total: 0,
         daily: 0,
-        lastResetDate: new Date().toISOString().split('T')[0]
+        lastResetDate: getChinaDateString()
       },
       // 添加文章使用统计
       articleUsage: {
         total: 0,
         daily: 0,
-        lastResetDate: new Date().toISOString().split('T')[0]
+        lastResetDate: getChinaDateString()
       },
       limits: getUserLimits('normal'),
       // 保存完整的微信用户信息（可选）
@@ -1861,11 +1861,10 @@ async function getUserInfo(env, openid) {
     
     const user = JSON.parse(userData);
     
-    // 检查是否需要重置每日使用次数
-    const today = new Date().toISOString().split('T')[0];
-    if (user.usage.lastResetDate !== today) {
+    // 检查是否需要重置每日使用次数 (基于中国时间)
+    if (shouldResetDaily(user.usage.lastResetDate)) {
       user.usage.daily = 0;
-      user.usage.lastResetDate = today;
+      user.usage.lastResetDate = getChinaDateString();
       await env.WECHAT_KV.put(userKey, JSON.stringify(user));
     }
     
@@ -2905,7 +2904,7 @@ async function updateUserTokenHistory(env, openid, tokenConsumed) {
     if (!userData) return;
 
     const user = JSON.parse(userData);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getChinaDateString();
 
     // 初始化历史记录结构
     if (!user.tokenUsage) user.tokenUsage = {};

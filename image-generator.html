@@ -3,544 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI图片生成 - AIMORELOGY工具集</title>
-    <link rel="icon" href="https://aimorelogy.com/favicon.ico" type="image/x-icon">
+    <title>AI图片生成器 - AIMORELOGY</title>
+    <link rel="icon" href="https://aimorelogy.github.io/AIMORELOGY-TOOLS/favicon.ico" type="image/x-icon">
+    
+    <!-- 引入统一样式 -->
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/header.css">
+    <link rel="stylesheet" href="styles/footer.css">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
         }
-
+        
+        .main-content {
+            padding-top: 80px;
+            padding-bottom: 60px;
+            min-height: calc(100vh - 140px);
+        }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 20px;
         }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            color: #666;
-            margin-bottom: 20px;
-        }
-
-        .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            color: #667eea;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .nav-link:hover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .main-content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-prompt {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .login-prompt h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
-        }
-
-        .login-prompt p {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1rem;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .user-info {
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .user-details h3 {
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .user-details p {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .usage-stats {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-item {
-            text-align: center;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            min-width: 100px;
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .generator-form {
-            background: rgba(102, 126, 234, 0.05);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group textarea {
+        
+        /* 确保模块容器正确显示 */
+        #imageGeneratorContainer {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 120px;
-            transition: border-color 0.3s ease;
         }
-
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 1rem;
-            background: white;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #667eea;
-        }
-
-        .generate-btn {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.1rem;
-            margin-top: 10px;
-        }
-
-        .generate-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .progress-container {
-            display: none;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e1e5e9;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 4px;
-        }
-
-        .result-container {
-            display: none;
-            background: rgba(102, 126, 234, 0.05);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .generated-image {
-            max-width: 100%;
-            height: auto;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .download-btn {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            margin-right: 10px;
-        }
-
-        .download-btn:hover {
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .alert-info {
-            background: rgba(23, 162, 184, 0.1);
-            color: #17a2b8;
-            border: 1px solid rgba(23, 162, 184, 0.2);
-        }
-
-        .alert-warning {
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border: 1px solid rgba(255, 193, 7, 0.2);
-        }
-
-        .alert-danger {
-            background: rgba(220, 53, 69, 0.1);
-            color: #721c24;
-            border: 1px solid rgba(220, 53, 69, 0.2);
-        }
-
-        .alert-success {
-            background: rgba(40, 167, 69, 0.1);
-            color: #155724;
-            border: 1px solid rgba(40, 167, 69, 0.2);
-        }
-
+        
+        /* 响应式设计 */
         @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .nav-links {
-                gap: 10px;
-            }
-
-            .nav-link {
-                padding: 6px 12px;
-                font-size: 0.9rem;
-            }
-
             .main-content {
-                padding: 25px;
+                padding-top: 70px;
             }
-
-            .user-info {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .usage-stats {
-                justify-content: center;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
+            
+            .container {
+                padding: 0 15px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- 页面头部 -->
-        <div class="header">
-            <h1>🎨 AI图片生成</h1>
-            <p>基于豆包Seedream 4.0模型，将文字描述转化为精美图片</p>
-            <div class="nav-links">
+    <!-- 统一头部导航 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-left">
+                <a href="index.html" class="logo">
+                    <img src="https://aimorelogy.github.io/AIMORELOGY-TOOLS/logo.png" alt="AIMORELOGY" class="logo-img">
+                    <span class="logo-text">AIMORELOGY</span>
+                </a>
+            </div>
+            
+            <nav class="header-nav">
                 <a href="index.html" class="nav-link">🏠 首页</a>
-                <a href="article-generator.html" class="nav-link">📝 文章生成</a>
-                <a href="image-generator.html" class="nav-link">🎨 图片生成</a>
-                <a href="https://aimorelogy.com" class="nav-link" target="_blank">🌐 官网</a>
+                <a href="article-generator.html" class="nav-link">✍️ 文章生成</a>
+                <a href="image-generator.html" class="nav-link active">🎨 图片生成</a>
+            </nav>
+            
+            <div class="header-right">
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <img id="userAvatar" class="user-avatar" alt="用户头像">
+                    <span id="userName" class="user-name"></span>
+                    <button id="logoutBtn" class="logout-btn">退出</button>
+                </div>
+                <button id="loginBtn" class="login-btn">微信登录</button>
             </div>
         </div>
+    </header>
 
-        <!-- 主要内容 -->
-        <div class="main-content">
-            <!-- 登录提示 -->
-            <div id="loginPrompt" class="login-prompt">
-                <h2>🔐 请先登录</h2>
-                <p>使用AI图片生成功能需要先进行微信登录验证</p>
-                <a href="index.html" class="btn">返回首页登录</a>
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <div class="container">
+            <!-- 图片生成模块容器 -->
+            <div id="imageGeneratorContainer"></div>
+        </div>
+    </main>
+
+    <!-- 统一底部 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>AIMORELOGY</h3>
+                    <p>专业的AI工具集合平台</p>
+                </div>
+                <div class="footer-section">
+                    <h4>产品服务</h4>
+                    <ul>
+                        <li><a href="article-generator.html">AI文章生成</a></li>
+                        <li><a href="image-generator.html">AI图片生成</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>关于我们</h4>
+                    <ul>
+                        <li><a href="#about">公司介绍</a></li>
+                        <li><a href="#contact">联系我们</a></li>
+                    </ul>
+                </div>
             </div>
-
-            <!-- 用户信息和使用统计 -->
-            <div id="userSection" style="display: none;">
-                <div class="user-info">
-                    <div class="user-details">
-                        <h3 id="userName">用户昵称</h3>
-                        <p>等级：<span id="userLevel">normal</span> | 今日图片生成：<span id="dailyUsage">0</span>/<span id="dailyLimit">3</span></p>
-                    </div>
-                    <div class="usage-stats">
-                        <div class="stat-item">
-                            <div class="stat-number" id="totalImages">0</div>
-                            <div class="stat-label">总生成数</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number" id="remainingToday">3</div>
-                            <div class="stat-label">今日剩余</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number" id="tokenUsed">0</div>
-                            <div class="stat-label">Token消耗</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 功能说明 -->
-                <div class="alert alert-info">
-                    <strong>💡 使用说明：</strong>
-                    <br>• 支持中英文描述，建议不超过300个汉字
-                    <br>• 支持1K、2K、4K三种分辨率
-                    <br>• 生成的图片24小时内有效，请及时下载
-                    <br>• 不同等级用户每日使用次数不同
-                </div>
-
-                <!-- 图片生成表单 -->
-                <div class="generator-form">
-                    <div class="form-group">
-                        <label for="promptInput">🖼️ 图片描述</label>
-                        <textarea 
-                            id="promptInput" 
-                            placeholder="请详细描述您想要生成的图片，例如：一只可爱的橘猫坐在窗台上，阳光透过窗户洒在它身上，温馨的家居环境"
-                            maxlength="600"
-                        ></textarea>
-                        <small style="color: #666;">字符数：<span id="charCount">0</span>/600</small>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="sizeSelect">📐 图片尺寸</label>
-                            <select id="sizeSelect">
-                                <option value="1K">1K (1024x1024)</option>
-                                <option value="2K" selected>2K (2048x2048)</option>
-                                <option value="4K">4K (4096x4096)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>⚙️ 其他设置</label>
-                            <div class="checkbox-group">
-                                <input type="checkbox" id="watermarkCheck" checked>
-                                <label for="watermarkCheck">添加AI生成水印</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button id="generateBtn" class="btn generate-btn" onclick="generateImage()">
-                        🎨 开始生成图片
-                    </button>
-                </div>
-
-                <!-- 生成进度 -->
-                <div id="progressContainer" class="progress-container">
-                    <h3>🔄 正在生成图片...</h3>
-                    <div class="progress-bar">
-                        <div id="progressFill" class="progress-fill"></div>
-                    </div>
-                    <p id="progressText">准备中...</p>
-                </div>
-
-                <!-- 生成结果 -->
-                <div id="resultContainer" class="result-container">
-                    <h3>✅ 图片生成成功！</h3>
-                    <img id="generatedImage" class="generated-image" alt="生成的图片">
-                    <div>
-                        <button id="downloadBtn" class="btn download-btn" onclick="downloadImage()">
-                            💾 下载图片
-                        </button>
-                        <button class="btn" onclick="resetGenerator()">
-                            🔄 重新生成
-                        </button>
-                    </div>
-                    <div class="alert alert-warning" style="margin-top: 20px;">
-                        <strong>⚠️ 重要提醒：</strong>图片链接24小时后将失效，请及时下载保存！
-                    </div>
-                </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 AIMORELOGY. All rights reserved.</p>
             </div>
         </div>
-    </div>
+    </footer>
 
+    <!-- 引入必要的脚本 -->
+    <script src="js/auth.js"></script>
+    <script src="js/common.js"></script>
     <script src="sections/image-generator.js"></script>
+    
     <script>
-        // 页面加载完成后初始化
+        // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof ImageGenerator !== 'undefined') {
-                window.imageGenerator = new ImageGenerator();
+            console.log('图片生成页面初始化开始');
+            
+            // 初始化认证系统
+            if (typeof AuthManager !== 'undefined') {
+                const authManager = new AuthManager();
+                
+                // 检查登录状态
+                authManager.checkLoginStatus().then(user => {
+                    console.log('用户登录状态:', user);
+                    
+                    // 初始化图片生成模块
+                    const container = document.getElementById('imageGeneratorContainer');
+                    if (container && typeof ImageGeneratorModule !== 'undefined') {
+                        const imageGenerator = new ImageGeneratorModule({
+                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
+                        });
+                        
+                        // 设置当前用户
+                        if (user) {
+                            imageGenerator.setCurrentUser(user);
+                        }
+                        
+                        // 渲染模块
+                        imageGenerator.render(container);
+                        
+                        console.log('图片生成模块初始化完成');
+                    } else {
+                        console.error('图片生成模块初始化失败: 容器或模块类不存在');
+                    }
+                }).catch(error => {
+                    console.error('检查登录状态失败:', error);
+                    
+                    // 即使登录检查失败，也要初始化模块
+                    const container = document.getElementById('imageGeneratorContainer');
+                    if (container && typeof ImageGeneratorModule !== 'undefined') {
+                        const imageGenerator = new ImageGeneratorModule({
+                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
+                        });
+                        
+                        imageGenerator.render(container);
+                        console.log('图片生成模块初始化完成（未登录状态）');
+                    }
+                });
+                
+                // 监听登录状态变化
+                authManager.onLoginStateChange((user) => {
+                    console.log('登录状态变化:', user);
+                    
+                    // 重新初始化模块
+                    const container = document.getElementById('imageGeneratorContainer');
+                    if (container && typeof ImageGeneratorModule !== 'undefined') {
+                        const imageGenerator = new ImageGeneratorModule({
+                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
+                        });
+                        
+                        if (user) {
+                            imageGenerator.setCurrentUser(user);
+                        }
+                        
+                        imageGenerator.render(container);
+                    }
+                });
             } else {
-                console.error('ImageGenerator class not found');
-                showMessage('系统初始化失败，请刷新页面重试', 'error');
-            }
-        });
-
-        // 字符计数
-        document.getElementById('promptInput').addEventListener('input', function() {
-            const charCount = this.value.length;
-            document.getElementById('charCount').textContent = charCount;
-            
-            if (charCount > 500) {
-                this.style.borderColor = '#ffc107';
-            } else {
-                this.style.borderColor = '#e1e5e9';
-            }
-        });
-
-        // 全局函数
-        function generateImage() {
-            if (window.imageGenerator) {
-                window.imageGenerator.generateImage();
-            }
-        }
-
-        function downloadImage() {
-            if (window.imageGenerator) {
-                window.imageGenerator.downloadImage();
-            }
-        }
-
-        function resetGenerator() {
-            if (window.imageGenerator) {
-                window.imageGenerator.resetGenerator();
-            }
-        }
-
-        function showMessage(message, type = 'info') {
-            // 创建消息提示
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            
-            // 插入到主内容区域顶部
-            const mainContent = document.querySelector('.main-content');
-            mainContent.insertBefore(alertDiv, mainContent.firstChild);
-            
-            // 3秒后自动移除
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.parentNode.removeChild(alertDiv);
+                console.error('AuthManager 未定义');
+                
+                // 如果认证管理器不可用，仍然初始化模块
+                const container = document.getElementById('imageGeneratorContainer');
+                if (container && typeof ImageGeneratorModule !== 'undefined') {
+                    const imageGenerator = new ImageGeneratorModule({
+                        apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
+                    });
+                    
+                    imageGenerator.render(container);
+                    console.log('图片生成模块初始化完成（无认证）');
                 }
-            }, 3000);
-        }
+            }
+        });
+        
+        // 错误处理
+        window.addEventListener('error', function(event) {
+            console.error('页面错误:', event.error);
+        });
+        
+        // 未捕获的Promise错误
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('未处理的Promise错误:', event.reason);
+        });
     </script>
 </body>
 </html>

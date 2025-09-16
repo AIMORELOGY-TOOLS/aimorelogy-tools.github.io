@@ -3,212 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI图片生成器 - AIMORELOGY</title>
-    <link rel="icon" href="https://aimorelogy.github.io/AIMORELOGY-TOOLS/favicon.ico" type="image/x-icon">
-    
-    <!-- 引入统一样式 -->
-    <link rel="stylesheet" href="styles/common.css">
-    <link rel="stylesheet" href="styles/header.css">
-    <link rel="stylesheet" href="styles/footer.css">
-    
+    <title>AI图片生成器 - AIMORELOGY TOOLS</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-        
-        .main-content {
-            padding-top: 80px;
-            padding-bottom: 60px;
-            min-height: calc(100vh - 140px);
+
+        /* 头部导航 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
-        
-        .container {
+
+        .nav-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        /* 确保模块容器正确显示 */
-        #imageGeneratorContainer {
-            width: 100%;
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            text-decoration: none;
         }
-        
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #667eea;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #495057;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        /* 主要内容区域 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
-            .main-content {
-                padding-top: 70px;
+            .nav-menu {
+                display: none;
             }
-            
-            .container {
+
+            .nav-container {
                 padding: 0 15px;
             }
+
+            .main-container {
+                padding: 20px 15px;
+            }
         }
+
+        /* 用户等级样式 */
+        .user-level-normal { background: #909399; }
+        .user-level-vip { background: #E6A23C; }
+        .user-level-svip { background: #F56C6C; }
+        .user-level-admin { background: #67C23A; }
     </style>
 </head>
 <body>
-    <!-- 统一头部导航 -->
+    <!-- 头部导航 -->
     <header class="header">
-        <div class="header-container">
-            <div class="header-left">
-                <a href="index.html" class="logo">
-                    <img src="https://aimorelogy.github.io/AIMORELOGY-TOOLS/logo.png" alt="AIMORELOGY" class="logo-img">
-                    <span class="logo-text">AIMORELOGY</span>
-                </a>
-            </div>
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">🤖</span>
+                <span>AIMORELOGY</span>
+            </a>
             
-            <nav class="header-nav">
-                <a href="index.html" class="nav-link">🏠 首页</a>
-                <a href="article-generator.html" class="nav-link">✍️ 文章生成</a>
-                <a href="image-generator.html" class="nav-link active">🎨 图片生成</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="#features">功能</a></li>
+                    <li><a href="#pricing">定价</a></li>
+                    <li><a href="#about">关于</a></li>
+                </ul>
             </nav>
             
-            <div class="header-right">
-                <div class="user-info" id="userInfo" style="display: none;">
-                    <img id="userAvatar" class="user-avatar" alt="用户头像">
-                    <span id="userName" class="user-name"></span>
-                    <button id="logoutBtn" class="logout-btn">退出</button>
-                </div>
-                <button id="loginBtn" class="login-btn">微信登录</button>
+            <div class="user-section">
+                <a href="index.html" class="back-btn">← 返回首页</a>
+                <!-- 微信登录模块将在这里渲染 -->
+                <div id="wechat-login-container"></div>
             </div>
         </div>
     </header>
 
-    <!-- 主要内容区域 -->
-    <main class="main-content">
-        <div class="container">
-            <!-- 图片生成模块容器 -->
-            <div id="imageGeneratorContainer"></div>
-        </div>
+    <!-- 主要内容 -->
+    <main class="main-container">
+        <!-- 图片生成器模块将在这里渲染 -->
+        <div id="image-generator-container"></div>
     </main>
 
-    <!-- 统一底部 -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>AIMORELOGY</h3>
-                    <p>专业的AI工具集合平台</p>
-                </div>
-                <div class="footer-section">
-                    <h4>产品服务</h4>
-                    <ul>
-                        <li><a href="article-generator.html">AI文章生成</a></li>
-                        <li><a href="image-generator.html">AI图片生成</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>关于我们</h4>
-                    <ul>
-                        <li><a href="#about">公司介绍</a></li>
-                        <li><a href="#contact">联系我们</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 AIMORELOGY. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- 引入必要的脚本 -->
-    <script src="js/auth.js"></script>
-    <script src="js/common.js"></script>
+    <!-- 引入微信登录模块 -->
+    <script src="sections/wechat-login.js"></script>
+    <!-- 引入图片生成模块 -->
     <script src="sections/image-generator.js"></script>
     
     <script>
-        // 页面初始化
+        // 初始化微信登录模块和图片生成器
+        let wechatLogin;
+        let imageGenerator;
+        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('图片生成页面初始化开始');
+            // 创建微信登录实例
+            wechatLogin = new WeChatLoginModule({
+                apiBaseUrl: 'https://aimorelogybackend.site'
+            });
             
-            // 初始化认证系统
-            if (typeof AuthManager !== 'undefined') {
-                const authManager = new AuthManager();
+            // 渲染到导航栏
+            const loginContainer = document.getElementById('wechat-login-container');
+            wechatLogin.render(loginContainer);
+            
+            // 创建图片生成器实例
+            imageGenerator = new ImageGeneratorModule({
+                apiBaseUrl: 'https://aimorelogybackend.site'
+            });
+            
+            // 渲染图片生成器
+            const generatorContainer = document.getElementById('image-generator-container');
+            imageGenerator.render(generatorContainer);
+            
+            // 监听登录状态变化
+            document.addEventListener('wechatLoginStatusChange', function(event) {
+                const { isLoggedIn, userData } = event.detail;
                 
-                // 检查登录状态
-                authManager.checkLoginStatus().then(user => {
-                    console.log('用户登录状态:', user);
-                    
-                    // 初始化图片生成模块
-                    const container = document.getElementById('imageGeneratorContainer');
-                    if (container && typeof ImageGeneratorModule !== 'undefined') {
-                        const imageGenerator = new ImageGeneratorModule({
-                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
-                        });
-                        
-                        // 设置当前用户
-                        if (user) {
-                            imageGenerator.setCurrentUser(user);
-                        }
-                        
-                        // 渲染模块
-                        imageGenerator.render(container);
-                        
-                        console.log('图片生成模块初始化完成');
-                    } else {
-                        console.error('图片生成模块初始化失败: 容器或模块类不存在');
-                    }
-                }).catch(error => {
-                    console.error('检查登录状态失败:', error);
-                    
-                    // 即使登录检查失败，也要初始化模块
-                    const container = document.getElementById('imageGeneratorContainer');
-                    if (container && typeof ImageGeneratorModule !== 'undefined') {
-                        const imageGenerator = new ImageGeneratorModule({
-                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
-                        });
-                        
-                        imageGenerator.render(container);
-                        console.log('图片生成模块初始化完成（未登录状态）');
-                    }
-                });
-                
-                // 监听登录状态变化
-                authManager.onLoginStateChange((user) => {
-                    console.log('登录状态变化:', user);
-                    
-                    // 重新初始化模块
-                    const container = document.getElementById('imageGeneratorContainer');
-                    if (container && typeof ImageGeneratorModule !== 'undefined') {
-                        const imageGenerator = new ImageGeneratorModule({
-                            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
-                        });
-                        
-                        if (user) {
-                            imageGenerator.setCurrentUser(user);
-                        }
-                        
-                        imageGenerator.render(container);
-                    }
-                });
-            } else {
-                console.error('AuthManager 未定义');
-                
-                // 如果认证管理器不可用，仍然初始化模块
-                const container = document.getElementById('imageGeneratorContainer');
-                if (container && typeof ImageGeneratorModule !== 'undefined') {
-                    const imageGenerator = new ImageGeneratorModule({
-                        apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev'
-                    });
-                    
-                    imageGenerator.render(container);
-                    console.log('图片生成模块初始化完成（无认证）');
+                if (isLoggedIn) {
+                    console.log('用户已登录:', userData);
+                    // 设置当前用户到图片生成器
+                    imageGenerator.setCurrentUser(userData);
+                    // 重新渲染界面
+                    imageGenerator.render(generatorContainer);
+                } else {
+                    console.log('用户已退出登录');
+                    // 清除用户信息
+                    imageGenerator.setCurrentUser(null);
+                    // 重新渲染界面
+                    imageGenerator.render(generatorContainer);
                 }
-            }
+            });
+            
+            // 监听用户使用次数更新
+            document.addEventListener('userUsageUpdated', function(event) {
+                const { usage } = event.detail;
+                console.log('用户使用次数已更新:', usage);
+            });
+            
+            // 检查当前登录状态 - 延迟执行确保登录状态检查完成
+            setTimeout(() => {
+                const currentUser = wechatLogin.getCurrentUser();
+                if (currentUser) {
+                    console.log('图片生成器页面发现已登录用户:', currentUser);
+                    imageGenerator.setCurrentUser(currentUser);
+                    imageGenerator.render(generatorContainer);
+                } else {
+                    console.log('图片生成器页面：用户未登录');
+                }
+            }, 100);
         });
+
+        // 全局函数，供其他模块调用
+        window.getWeChatLogin = function() {
+            return wechatLogin;
+        };
         
-        // 错误处理
-        window.addEventListener('error', function(event) {
-            console.error('页面错误:', event.error);
-        });
-        
-        // 未捕获的Promise错误
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('未处理的Promise错误:', event.reason);
-        });
+        window.getImageGenerator = function() {
+            return imageGenerator;
+        };
     </script>
 </body>
 </html>

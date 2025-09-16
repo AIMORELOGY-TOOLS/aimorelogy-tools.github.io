@@ -4,7 +4,7 @@
 class ImageGeneratorModule {
     constructor(options = {}) {
         this.config = {
-            apiBaseUrl: 'https://aimorelogy-tools-backstage.jeff010726.workers.dev',
+            apiBaseUrl: 'https://aimorelogybackend.site',
             ...options
         };
         
@@ -54,177 +54,94 @@ class ImageGeneratorModule {
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     }
                     
-                    .module-header {
+                    .generator-header {
                         text-align: center;
-                        margin-bottom: 40px;
-                        padding: 40px 20px;
-                        background: rgba(255, 255, 255, 0.95);
-                        backdrop-filter: blur(10px);
+                        margin-bottom: 30px;
+                        padding: 30px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         border-radius: 20px;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        color: white;
                     }
                     
-                    .module-title {
-                        font-size: 2.5rem;
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        margin-bottom: 10px;
+                    .generator-title {
+                        font-size: 28px;
                         font-weight: 700;
+                        margin-bottom: 10px;
                     }
                     
-                    .module-subtitle {
-                        font-size: 1.2rem;
-                        color: #666;
-                        margin-bottom: 20px;
+                    .generator-subtitle {
+                        font-size: 16px;
+                        opacity: 0.9;
+                        line-height: 1.6;
                     }
                     
-                    .feature-tags {
-                        display: flex;
-                        justify-content: center;
-                        gap: 15px;
-                        flex-wrap: wrap;
-                    }
-                    
-                    .feature-tag {
-                        background: rgba(102, 126, 234, 0.1);
-                        color: #667eea;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-size: 0.9rem;
-                        font-weight: 500;
-                    }
-                    
-                    .login-prompt {
-                        text-align: center;
-                        padding: 60px 20px;
-                        background: rgba(255, 255, 255, 0.95);
-                        backdrop-filter: blur(10px);
-                        border-radius: 20px;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                    }
-                    
-                    .login-prompt h2 {
-                        color: #667eea;
-                        margin-bottom: 20px;
-                        font-size: 1.8rem;
-                    }
-                    
-                    .login-prompt p {
-                        color: #666;
-                        margin-bottom: 30px;
-                        font-size: 1.1rem;
-                    }
-                    
-                    .generator-interface {
-                        background: rgba(255, 255, 255, 0.95);
-                        backdrop-filter: blur(10px);
-                        border-radius: 20px;
-                        padding: 40px;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                    }
-                    
-                    .user-info {
-                        background: rgba(102, 126, 234, 0.1);
-                        border-radius: 15px;
-                        padding: 20px;
-                        margin-bottom: 30px;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        flex-wrap: wrap;
-                        gap: 15px;
-                    }
-                    
-                    .user-details h3 {
-                        color: #667eea;
-                        margin-bottom: 5px;
-                    }
-                    
-                    .user-details p {
-                        color: #666;
-                        font-size: 0.9rem;
-                    }
-                    
-                    .usage-stats {
-                        display: flex;
-                        gap: 20px;
-                        flex-wrap: wrap;
-                    }
-                    
-                    .stat-item {
-                        text-align: center;
-                        background: white;
+                    .usage-info {
+                        background: rgba(255, 255, 255, 0.1);
                         padding: 15px;
                         border-radius: 10px;
-                        min-width: 100px;
+                        margin-top: 20px;
+                        text-align: center;
                     }
                     
-                    .stat-number {
-                        font-size: 1.5rem;
-                        font-weight: bold;
-                        color: #667eea;
+                    .usage-text {
+                        font-size: 14px;
+                        margin: 0;
                     }
                     
-                    .stat-label {
-                        font-size: 0.8rem;
-                        color: #666;
-                        margin-top: 5px;
+                    .form-container {
+                        background: white;
+                        border-radius: 20px;
+                        padding: 30px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                        margin-bottom: 30px;
                     }
                     
                     .form-group {
                         margin-bottom: 25px;
                     }
                     
-                    .form-group label {
+                    .form-label {
                         display: block;
-                        margin-bottom: 8px;
                         font-weight: 600;
+                        margin-bottom: 8px;
                         color: #333;
+                        font-size: 16px;
                     }
                     
-                    .form-group textarea {
+                    .form-input, .form-textarea, .form-select {
                         width: 100%;
                         padding: 15px;
                         border: 2px solid #e1e5e9;
-                        border-radius: 10px;
-                        font-size: 1rem;
-                        resize: vertical;
-                        min-height: 120px;
-                        transition: border-color 0.3s ease;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        transition: all 0.3s ease;
                         font-family: inherit;
+                        resize: none;
                     }
                     
-                    .form-group textarea:focus {
+                    .form-input:focus, .form-textarea:focus, .form-select:focus {
                         outline: none;
                         border-color: #667eea;
+                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                    }
+                    
+                    .form-textarea {
+                        min-height: 120px;
+                        max-height: 200px;
+                        overflow-y: auto;
                     }
                     
                     .form-row {
                         display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        grid-template-columns: 1fr 1fr;
                         gap: 20px;
-                    }
-                    
-                    .form-group select {
-                        width: 100%;
-                        padding: 12px;
-                        border: 2px solid #e1e5e9;
-                        border-radius: 10px;
-                        font-size: 1rem;
-                        background: white;
-                        transition: border-color 0.3s ease;
-                    }
-                    
-                    .form-group select:focus {
-                        outline: none;
-                        border-color: #667eea;
                     }
                     
                     .checkbox-group {
                         display: flex;
                         align-items: center;
                         gap: 10px;
+                        margin-top: 10px;
                     }
                     
                     .checkbox-group input[type="checkbox"] {
@@ -233,64 +150,76 @@ class ImageGeneratorModule {
                         accent-color: #667eea;
                     }
                     
-                    .btn {
-                        background: linear-gradient(135deg, #667eea, #764ba2);
+                    .generate-btn {
+                        width: 100%;
+                        padding: 18px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white;
                         border: none;
-                        padding: 15px 30px;
-                        border-radius: 25px;
-                        font-size: 1.1rem;
+                        border-radius: 12px;
+                        font-size: 18px;
                         font-weight: 600;
                         cursor: pointer;
                         transition: all 0.3s ease;
-                        width: 100%;
-                        margin-top: 10px;
+                        position: relative;
+                        overflow: hidden;
                     }
                     
-                    .btn:hover:not(:disabled) {
+                    .generate-btn:hover:not(:disabled) {
                         transform: translateY(-2px);
-                        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+                        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
                     }
                     
-                    .btn:disabled {
-                        background: #ccc;
+                    .generate-btn:disabled {
+                        opacity: 0.7;
                         cursor: not-allowed;
                         transform: none;
                     }
                     
-                    .progress-container {
+                    .btn-loading {
                         display: none;
-                        background: rgba(102, 126, 234, 0.1);
-                        border-radius: 15px;
-                        padding: 20px;
-                        margin-bottom: 20px;
-                        text-align: center;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
                     }
                     
-                    .progress-bar {
-                        width: 100%;
-                        height: 8px;
-                        background: #e1e5e9;
-                        border-radius: 4px;
-                        overflow: hidden;
-                        margin: 15px 0;
+                    .loading-spinner {
+                        width: 20px;
+                        height: 20px;
+                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        border-top: 2px solid white;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
                     }
                     
-                    .progress-fill {
-                        height: 100%;
-                        background: linear-gradient(135deg, #667eea, #764ba2);
-                        width: 0%;
-                        transition: width 0.3s ease;
-                        border-radius: 4px;
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
                     }
                     
                     .result-container {
-                        display: none;
-                        background: rgba(102, 126, 234, 0.05);
-                        border-radius: 15px;
+                        background: white;
+                        border-radius: 20px;
                         padding: 30px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                        margin-top: 30px;
+                        display: none;
                         text-align: center;
-                        margin-top: 20px;
+                    }
+                    
+                    .result-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 20px;
+                        padding-bottom: 15px;
+                        border-bottom: 2px solid #f0f0f0;
+                    }
+                    
+                    .result-title {
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: #333;
                     }
                     
                     .generated-image {
@@ -302,43 +231,79 @@ class ImageGeneratorModule {
                     }
                     
                     .download-btn {
+                        padding: 12px 24px;
                         background: linear-gradient(135deg, #28a745, #20c997);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
                         margin-right: 10px;
+                        transition: all 0.2s ease;
                     }
                     
                     .download-btn:hover {
+                        transform: translateY(-1px);
                         box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
                     }
                     
-                    .alert {
+                    .reset-btn {
+                        padding: 12px 24px;
+                        background: #f8f9fa;
+                        color: #495057;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .reset-btn:hover {
+                        background: #e9ecef;
+                        transform: translateY(-1px);
+                    }
+                    
+                    .error-message {
+                        background: #fee;
+                        color: #c33;
                         padding: 15px;
-                        border-radius: 10px;
-                        margin-bottom: 20px;
-                        font-weight: 500;
+                        border-radius: 8px;
+                        margin-top: 15px;
+                        display: none;
                     }
                     
-                    .alert-info {
-                        background: rgba(23, 162, 184, 0.1);
-                        color: #17a2b8;
-                        border: 1px solid rgba(23, 162, 184, 0.2);
-                    }
-                    
-                    .alert-warning {
-                        background: rgba(255, 193, 7, 0.1);
-                        color: #856404;
-                        border: 1px solid rgba(255, 193, 7, 0.2);
-                    }
-                    
-                    .alert-danger {
-                        background: rgba(220, 53, 69, 0.1);
-                        color: #721c24;
-                        border: 1px solid rgba(220, 53, 69, 0.2);
-                    }
-                    
-                    .alert-success {
-                        background: rgba(40, 167, 69, 0.1);
+                    .success-message {
+                        background: #d4edda;
                         color: #155724;
-                        border: 1px solid rgba(40, 167, 69, 0.2);
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin-top: 15px;
+                        display: none;
+                    }
+                    
+                    .warning-message {
+                        background: #fff3cd;
+                        color: #856404;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin-top: 15px;
+                    }
+                    
+                    .login-prompt {
+                        text-align: center;
+                        padding: 40px;
+                        background: #f8f9fa;
+                        border-radius: 15px;
+                        color: #666;
+                    }
+                    
+                    .login-prompt-title {
+                        font-size: 20px;
+                        font-weight: 600;
+                        margin-bottom: 10px;
+                        color: #333;
                     }
                     
                     @media (max-width: 768px) {
@@ -346,21 +311,16 @@ class ImageGeneratorModule {
                             padding: 15px;
                         }
                         
-                        .module-title {
-                            font-size: 2rem;
+                        .generator-header {
+                            padding: 20px;
                         }
                         
-                        .generator-interface {
-                            padding: 25px;
+                        .generator-title {
+                            font-size: 24px;
                         }
                         
-                        .user-info {
-                            flex-direction: column;
-                            text-align: center;
-                        }
-                        
-                        .usage-stats {
-                            justify-content: center;
+                        .form-container {
+                            padding: 20px;
                         }
                         
                         .form-row {
@@ -369,19 +329,88 @@ class ImageGeneratorModule {
                     }
                 </style>
                 
-                <!-- 模块头部 -->
-                <div class="module-header">
-                    <h1 class="module-title">🎨 AI图片生成</h1>
-                    <p class="module-subtitle">基于豆包Seedream 4.0模型，将文字描述转化为精美图片</p>
-                    <div class="feature-tags">
-                        <span class="feature-tag">🚀 豆包Seedream 4.0</span>
-                        <span class="feature-tag">📐 多种尺寸</span>
-                        <span class="feature-tag">⚡ 快速生成</span>
-                        <span class="feature-tag">🎯 精准描述</span>
+                <div class="generator-header">
+                    <h1 class="generator-title">🎨 AI图片生成器</h1>
+                    <p class="generator-subtitle">
+                        基于豆包Seedream 4.0模型，将文字描述转化为精美图片<br>
+                        支持多种尺寸选择，满足不同创作需求
+                    </p>
+                    <div style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+                        技术支持：深圳市爱谋科技有限公司
+                    </div>
+                    <div class="usage-info" id="usage-info">
+                        <p class="usage-text">请先登录以查看使用情况</p>
                     </div>
                 </div>
                 
-                ${this.currentUser ? this.renderGeneratorInterface() : this.renderLoginPrompt()}
+                <div id="main-content">
+                    ${this.currentUser ? this.renderGeneratorForm() : this.renderLoginPrompt()}
+                </div>
+                
+                <div class="result-container" id="result-container">
+                    <div class="result-header">
+                        <h3 class="result-title">生成结果</h3>
+                    </div>
+                    <img id="generated-image" class="generated-image" alt="生成的图片">
+                    <div>
+                        <button class="download-btn" id="download-btn">💾 下载图片</button>
+                        <button class="reset-btn" id="reset-btn">🔄 重新生成</button>
+                    </div>
+                    <div class="warning-message">
+                        <strong>⚠️ 重要提醒：</strong>图片链接24小时后将失效，请及时下载保存！
+                    </div>
+                </div>
+                
+                <div class="error-message" id="error-message"></div>
+                <div class="success-message" id="success-message"></div>
+            </div>
+        `;
+        
+        this.updateUsageInfo();
+    }
+
+    // 渲染生成器表单
+    renderGeneratorForm() {
+        return `
+            <div class="form-container">
+                <div class="form-group">
+                    <label class="form-label" for="image-prompt">图片描述</label>
+                    <textarea 
+                        class="form-textarea" 
+                        id="image-prompt" 
+                        placeholder="请详细描述您想要生成的图片，例如：一只可爱的橘猫坐在窗台上，阳光透过窗户洒在它身上，温馨的家居环境..."
+                        rows="4"
+                        maxlength="600"
+                    ></textarea>
+                    <small style="color: #666; font-size: 12px;">建议不超过300个汉字或600个英文单词</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="image-size">图片尺寸</label>
+                        <select class="form-select" id="image-size">
+                            <option value="1K">1K (1024x1024)</option>
+                            <option value="2K" selected>2K (2048x2048)</option>
+                            <option value="4K">4K (4096x4096)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">其他设置</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="watermark" checked>
+                            <label for="watermark">添加AI生成水印</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="generate-btn" id="generate-btn">
+                    <span class="btn-text">🎨 开始生成图片</span>
+                    <div class="btn-loading" id="btn-loading">
+                        <div class="loading-spinner"></div>
+                        <span>AI正在创作中...</span>
+                    </div>
+                </button>
             </div>
         `;
     }
@@ -390,436 +419,435 @@ class ImageGeneratorModule {
     renderLoginPrompt() {
         return `
             <div class="login-prompt">
-                <h2>🔐 请先登录</h2>
-                <p>使用AI图片生成功能需要先进行微信登录验证</p>
-                <p style="color: #999; font-size: 0.9rem;">登录后即可享受智能图片生成服务</p>
-            </div>
-        `;
-    }
-
-    // 渲染生成器界面
-    renderGeneratorInterface() {
-        const userLevel = this.currentUser.level || 'normal';
-        const levelInfo = this.usageLimits[userLevel];
-        const dailyUsage = this.currentUser.imageUsage?.daily || 0;
-        const totalUsage = this.currentUser.imageUsage?.total || 0;
-        const tokenUsage = this.currentUser.tokenUsage?.image?.total || 0;
-        const dailyLimit = levelInfo.daily;
-        const remaining = dailyLimit === -1 ? '无限制' : Math.max(0, dailyLimit - dailyUsage);
-
-        return `
-            <div class="generator-interface">
-                <!-- 用户信息 -->
-                <div class="user-info">
-                    <div class="user-details">
-                        <h3>${this.currentUser.nickname || '微信用户'}</h3>
-                        <p>等级：${levelInfo.name} | 今日图片生成：${dailyUsage}/${dailyLimit === -1 ? '∞' : dailyLimit}</p>
-                    </div>
-                    <div class="usage-stats">
-                        <div class="stat-item">
-                            <div class="stat-number">${totalUsage}</div>
-                            <div class="stat-label">总生成数</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${remaining}</div>
-                            <div class="stat-label">今日剩余</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">${tokenUsage}</div>
-                            <div class="stat-label">Token消耗</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 功能说明 -->
-                <div class="alert alert-info">
-                    <strong>💡 使用说明：</strong>
-                    <br>• 支持中英文描述，建议不超过300个汉字
-                    <br>• 支持1K、2K、4K三种分辨率
-                    <br>• 生成的图片24小时内有效，请及时下载
-                    <br>• 不同等级用户每日使用次数不同
-                </div>
-
-                <!-- 生成表单 -->
-                <div class="form-group">
-                    <label for="promptInput">🖼️ 图片描述</label>
-                    <textarea 
-                        id="promptInput" 
-                        placeholder="请详细描述您想要生成的图片，例如：一只可爱的橘猫坐在窗台上，阳光透过窗户洒在它身上，温馨的家居环境"
-                        maxlength="600"
-                    ></textarea>
-                    <small style="color: #666;">字符数：<span id="charCount">0</span>/600</small>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sizeSelect">📐 图片尺寸</label>
-                        <select id="sizeSelect">
-                            <option value="1K">1K (1024x1024)</option>
-                            <option value="2K" selected>2K (2048x2048)</option>
-                            <option value="4K">4K (4096x4096)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>⚙️ 其他设置</label>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="watermarkCheck" checked>
-                            <label for="watermarkCheck">添加AI生成水印</label>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="generateBtn" class="btn">
-                    🎨 开始生成图片
-                </button>
-
-                <!-- 生成进度 -->
-                <div id="progressContainer" class="progress-container">
-                    <h3>🔄 正在生成图片...</h3>
-                    <div class="progress-bar">
-                        <div id="progressFill" class="progress-fill"></div>
-                    </div>
-                    <p id="progressText">准备中...</p>
-                </div>
-
-                <!-- 生成结果 -->
-                <div id="resultContainer" class="result-container">
-                    <h3>✅ 图片生成成功！</h3>
-                    <img id="generatedImage" class="generated-image" alt="生成的图片">
-                    <div>
-                        <button id="downloadBtn" class="btn download-btn">
-                            💾 下载图片
-                        </button>
-                        <button id="resetBtn" class="btn">
-                            🔄 重新生成
-                        </button>
-                    </div>
-                    <div class="alert alert-warning" style="margin-top: 20px;">
-                        <strong>⚠️ 重要提醒：</strong>图片链接24小时后将失效，请及时下载保存！
-                    </div>
-                </div>
+                <h3 class="login-prompt-title">请先登录</h3>
+                <p>使用AI图片生成功能需要先登录您的微信账号</p>
             </div>
         `;
     }
 
     // 绑定事件
     bindEvents() {
-        // 字符计数
-        const promptInput = this.container.querySelector('#promptInput');
-        const charCount = this.container.querySelector('#charCount');
+        // 防止重复绑定
+        if (this.eventsbound) {
+            console.log('事件已绑定，跳过重复绑定');
+            return;
+        }
         
-        if (promptInput && charCount) {
-            promptInput.addEventListener('input', () => {
-                const count = promptInput.value.length;
-                charCount.textContent = count;
-                
-                if (count > 500) {
-                    promptInput.style.borderColor = '#ffc107';
-                } else {
-                    promptInput.style.borderColor = '#e1e5e9';
-                }
-            });
+        console.log('开始绑定图片生成器事件...');
+        
+        if (!this.container) {
+            console.error('容器元素不存在，无法绑定事件');
+            return;
         }
-
-        // 生成按钮
-        const generateBtn = this.container.querySelector('#generateBtn');
+        
+        // 使用事件委托方式绑定按钮事件
+        this.container.removeEventListener('click', this.handleContainerClick);
+        this.container.addEventListener('click', this.handleContainerClick.bind(this));
+        
+        // 直接查找并绑定按钮
+        const generateBtn = this.container.querySelector('#generate-btn');
+        const downloadBtn = this.container.querySelector('#download-btn');
+        const resetBtn = this.container.querySelector('#reset-btn');
+        
+        console.log('查找按钮结果:', {
+            generateBtn: !!generateBtn,
+            downloadBtn: !!downloadBtn,
+            resetBtn: !!resetBtn
+        });
+        
         if (generateBtn) {
-            generateBtn.addEventListener('click', () => this.generateImage());
+            generateBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('生成按钮被点击！');
+                this.handleGenerate();
+                return false;
+            };
         }
-
-        // 下载按钮
-        const downloadBtn = this.container.querySelector('#downloadBtn');
+        
         if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => this.downloadImage());
+            downloadBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('下载按钮被点击！');
+                this.handleDownload();
+                return false;
+            };
         }
-
-        // 重置按钮
-        const resetBtn = this.container.querySelector('#resetBtn');
+        
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => this.resetGenerator());
+            resetBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('重置按钮被点击！');
+                this.handleReset();
+                return false;
+            };
         }
+        
+        // 监听登录状态变化
+        document.removeEventListener('wechatLoginStatusChange', this.handleLoginStatusChange);
+        document.addEventListener('wechatLoginStatusChange', this.handleLoginStatusChange.bind(this));
+        
+        // 标记事件已绑定
+        this.eventsbound = true;
+        console.log('图片生成器事件绑定完成');
+    }
+
+    // 容器点击事件处理（事件委托）
+    handleContainerClick(event) {
+        const target = event.target;
+        
+        if (target.id === 'generate-btn' || target.closest('#generate-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('生成按钮被点击！- 事件委托方式');
+            this.handleGenerate();
+            return false;
+        }
+        
+        if (target.id === 'download-btn' || target.closest('#download-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('下载按钮被点击！- 事件委托方式');
+            this.handleDownload();
+            return false;
+        }
+        
+        if (target.id === 'reset-btn' || target.closest('#reset-btn')) {
+            event.preventDefault();
+            event.stopPropagation();
+            console.log('重置按钮被点击！- 事件委托方式');
+            this.handleReset();
+            return false;
+        }
+    }
+
+    // 登录状态变化处理
+    handleLoginStatusChange(event) {
+        const { isLoggedIn, userData } = event.detail;
+        console.log('图片生成器：登录状态变化:', isLoggedIn, userData);
+        
+        if (isLoggedIn) {
+            this.setCurrentUser(userData);
+        } else {
+            this.setCurrentUser(null);
+        }
+        
+        this.renderInterface();
+        
+        if (!this.eventsbound) {
+            setTimeout(() => {
+                this.bindEvents();
+            }, 100);
+        }
+    }
+
+    // 更新使用情况显示
+    updateUsageInfo() {
+        const usageInfo = this.container.querySelector('#usage-info');
+        if (!usageInfo || !this.currentUser) return;
+        
+        const userLevel = this.currentUser.level || 'normal';
+        const limits = this.usageLimits[userLevel];
+        const dailyUsage = this.currentUser.imageUsage?.daily || 0;
+        
+        const limitText = limits.daily === -1 ? '无限制' : limits.daily;
+        
+        usageInfo.innerHTML = `
+            <p class="usage-text">
+                ${limits.name} | 今日已使用: ${dailyUsage}/${limitText} 次
+            </p>
+        `;
+    }
+
+    // 处理生成图片
+    async handleGenerate() {
+        console.log('handleGenerate 被调用');
+        console.log('当前用户:', this.currentUser);
+        console.log('是否正在生成:', this.isGenerating);
+        
+        if (!this.currentUser) {
+            console.log('用户未登录，显示错误');
+            this.showError('请先登录');
+            return;
+        }
+        
+        if (this.isGenerating) {
+            console.log('正在生成中，忽略请求');
+            return;
+        }
+        
+        // 检查使用权限
+        const permission = this.checkUsagePermission();
+        if (!permission.allowed) {
+            this.showError(permission.reason);
+            return;
+        }
+        
+        // 获取表单数据
+        const prompt = this.container.querySelector('#image-prompt')?.value?.trim();
+        const size = this.container.querySelector('#image-size')?.value || '2K';
+        const watermark = this.container.querySelector('#watermark')?.checked || true;
+        
+        if (!prompt) {
+            this.showError('请输入图片描述');
+            return;
+        }
+        
+        if (prompt.length > 600) {
+            this.showError('图片描述不能超过600个字符');
+            return;
+        }
+        
+        try {
+            this.setGeneratingState(true);
+            this.hideError();
+            this.hideSuccess();
+            this.hideResult();
+            
+            await this.generateImage(prompt, size, watermark);
+            
+        } catch (error) {
+            console.error('生成图片失败:', error);
+            this.showError(error.message || '生成失败，请重试');
+        } finally {
+            this.setGeneratingState(false);
+        }
+    }
+
+    // 检查使用权限
+    checkUsagePermission() {
+        if (!this.currentUser) {
+            return { allowed: false, reason: '请先登录' };
+        }
+        
+        const userLevel = this.currentUser.level || 'normal';
+        const limits = this.usageLimits[userLevel];
+        const dailyUsage = this.currentUser.imageUsage?.daily || 0;
+        
+        if (limits.daily !== -1 && dailyUsage >= limits.daily) {
+            return { allowed: false, reason: `今日使用次数已达上限（${limits.daily}次）` };
+        }
+        
+        return { allowed: true };
     }
 
     // 生成图片
-    async generateImage() {
-        if (this.isGenerating || !this.currentUser) return;
-
-        const promptInput = this.container.querySelector('#promptInput');
-        const sizeSelect = this.container.querySelector('#sizeSelect');
-        const watermarkCheck = this.container.querySelector('#watermarkCheck');
-
-        const prompt = promptInput.value.trim();
-        const size = sizeSelect.value;
-        const watermark = watermarkCheck.checked;
-
-        // 验证输入
-        if (!prompt) {
-            this.showMessage('请输入图片描述', 'warning');
-            return;
-        }
-
-        if (prompt.length > 600) {
-            this.showMessage('图片描述不能超过600个字符', 'warning');
-            return;
-        }
-
-        // 检查使用限制
-        const userLevel = this.currentUser.level || 'normal';
-        const dailyLimit = this.usageLimits[userLevel].daily;
-        const currentUsage = this.currentUser.imageUsage?.daily || 0;
+    async generateImage(prompt, size, watermark) {
+        console.log('开始生成图片:', { prompt, size, watermark });
         
-        if (dailyLimit !== -1 && currentUsage >= dailyLimit) {
-            this.showMessage('今日使用次数已达上限', 'warning');
-            return;
-        }
-
-        this.isGenerating = true;
-        this.showProgress();
-        this.hideResult();
-
-        try {
-            // 调用图片生成API
-            const response = await fetch(`${this.config.apiBaseUrl}/generate_image`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    token: localStorage.getItem('wechat_token'),
-                    prompt: prompt,
-                    size: size,
-                    watermark: watermark
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.displayGeneratedImage(data.data);
-                this.updateUserUsage(data.usage);
-                this.showMessage('图片生成成功！', 'success');
-            } else {
-                throw new Error(data.message || '图片生成失败');
-            }
-        } catch (error) {
-            console.error('图片生成失败:', error);
-            this.showMessage(error.message || '图片生成失败，请稍后重试', 'danger');
-        } finally {
-            this.isGenerating = false;
-            this.hideProgress();
-        }
-    }
-
-    // 显示进度
-    showProgress() {
-        const progressContainer = this.container.querySelector('#progressContainer');
-        const progressFill = this.container.querySelector('#progressFill');
-        const progressText = this.container.querySelector('#progressText');
+        const requestBody = {
+            token: this.currentUser.token,
+            prompt: prompt,
+            size: size,
+            watermark: watermark
+        };
         
-        if (progressContainer) {
-            progressContainer.style.display = 'block';
-        }
+        console.log('请求体:', requestBody);
+        console.log('API地址:', `${this.config.apiBaseUrl}/generate_image`);
         
-        // 模拟进度
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-            progress += Math.random() * 15;
-            if (progress > 90) progress = 90;
-            
-            if (progressFill) {
-                progressFill.style.width = progress + '%';
-            }
-            
-            if (progressText) {
-                if (progress < 30) {
-                    progressText.textContent = '正在处理您的描述...';
-                } else if (progress < 60) {
-                    progressText.textContent = 'AI正在创作中...';
-                } else {
-                    progressText.textContent = '即将完成...';
-                }
-            }
-        }, 500);
-
-        // 保存interval ID以便清理
-        this.progressInterval = progressInterval;
-    }
-
-    // 隐藏进度
-    hideProgress() {
-        const progressContainer = this.container.querySelector('#progressContainer');
-        if (progressContainer) {
-            progressContainer.style.display = 'none';
-        }
+        const response = await fetch(`${this.config.apiBaseUrl}/generate_image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.currentUser.token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
         
-        if (this.progressInterval) {
-            clearInterval(this.progressInterval);
-            this.progressInterval = null;
-        }
+        console.log('响应状态:', response.status);
         
-        // 重置进度
-        const progressFill = this.container.querySelector('#progressFill');
-        const progressText = this.container.querySelector('#progressText');
+        const data = await response.json();
+        console.log('响应数据:', data);
         
-        if (progressFill) {
-            progressFill.style.width = '0%';
-        }
-        
-        if (progressText) {
-            progressText.textContent = '准备中...';
+        if (data.success) {
+            this.displayResult(data.imageUrl, data.tokenConsumed);
+            await this.updateUsageCount(data.tokenConsumed || 0);
+            this.showSuccess('图片生成成功！');
+        } else {
+            throw new Error(data.error || '图片生成失败');
         }
     }
 
     // 显示生成结果
-    displayGeneratedImage(imageData) {
-        const resultContainer = this.container.querySelector('#resultContainer');
-        const generatedImage = this.container.querySelector('#generatedImage');
+    displayResult(imageUrl, tokenConsumed) {
+        this.currentImageUrl = imageUrl;
         
-        this.currentImageUrl = imageData.imageUrl;
+        const resultContainer = this.container.querySelector('#result-container');
+        const generatedImage = this.container.querySelector('#generated-image');
         
         if (generatedImage) {
-            generatedImage.src = this.currentImageUrl;
+            generatedImage.src = imageUrl;
         }
         
         if (resultContainer) {
             resultContainer.style.display = 'block';
             resultContainer.scrollIntoView({ behavior: 'smooth' });
         }
+        
+        console.log('图片生成完成，Token消耗:', tokenConsumed);
     }
 
-    // 隐藏结果
-    hideResult() {
-        const resultContainer = this.container.querySelector('#resultContainer');
-        if (resultContainer) {
-            resultContainer.style.display = 'none';
+    // 更新使用次数
+    async updateUsageCount(tokenConsumed = 0) {
+        try {
+            console.log('开始更新图片生成使用次数...');
+            
+            const requestBody = {
+                token: this.currentUser.token,
+                action: 'image_generation',
+                amount: 1,
+                tokenConsumed: tokenConsumed
+            };
+            
+            const response = await fetch(`${this.config.apiBaseUrl}/update_image_usage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.currentUser.token}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            const data = await response.json();
+            console.log('使用次数更新响应:', data);
+            
+            if (data.success) {
+                // 更新本地用户信息
+                this.currentUser.imageUsage = data.usage;
+                this.updateUsageInfo();
+                
+                // 触发用户信息更新事件
+                const event = new CustomEvent('userUsageUpdated', {
+                    detail: { usage: data.usage }
+                });
+                document.dispatchEvent(event);
+            }
+        } catch (error) {
+            console.error('更新使用次数失败:', error);
         }
-        this.currentImageUrl = null;
     }
 
-    // 下载图片
-    async downloadImage() {
+    // 处理下载
+    async handleDownload() {
         if (!this.currentImageUrl) {
-            this.showMessage('没有可下载的图片', 'warning');
+            this.showError('没有可下载的图片');
             return;
         }
 
         try {
-            // 创建下载链接
             const link = document.createElement('a');
             link.href = this.currentImageUrl;
             link.download = `ai-generated-image-${Date.now()}.jpg`;
             link.target = '_blank';
             
-            // 触发下载
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            this.showMessage('图片下载已开始', 'success');
+            this.showSuccess('图片下载已开始');
         } catch (error) {
             console.error('下载失败:', error);
-            this.showMessage('下载失败，请右键保存图片', 'warning');
+            this.showError('下载失败，请右键保存图片');
         }
     }
 
-    // 重置生成器
-    resetGenerator() {
-        // 清空输入
-        const promptInput = this.container.querySelector('#promptInput');
-        const charCount = this.container.querySelector('#charCount');
-        const sizeSelect = this.container.querySelector('#sizeSelect');
-        const watermarkCheck = this.container.querySelector('#watermarkCheck');
+    // 处理重置
+    handleReset() {
+        // 清空表单
+        const promptInput = this.container.querySelector('#image-prompt');
+        const sizeSelect = this.container.querySelector('#image-size');
+        const watermarkCheck = this.container.querySelector('#watermark');
         
-        if (promptInput) {
-            promptInput.value = '';
-            promptInput.style.borderColor = '#e1e5e9';
-        }
-        
-        if (charCount) {
-            charCount.textContent = '0';
-        }
-        
-        if (sizeSelect) {
-            sizeSelect.value = '2K';
-        }
-        
-        if (watermarkCheck) {
-            watermarkCheck.checked = true;
-        }
+        if (promptInput) promptInput.value = '';
+        if (sizeSelect) sizeSelect.value = '2K';
+        if (watermarkCheck) watermarkCheck.checked = true;
         
         // 隐藏结果
         this.hideResult();
-        this.hideProgress();
+        this.hideError();
+        this.hideSuccess();
         
-        this.showMessage('已重置，可以开始新的创作', 'info');
+        this.currentImageUrl = null;
     }
 
-    // 更新用户使用情况
-    updateUserUsage(usage) {
-        if (this.currentUser && usage) {
-            // 更新本地用户数据
-            if (!this.currentUser.imageUsage) {
-                this.currentUser.imageUsage = {};
+    // 设置生成状态
+    setGeneratingState(isGenerating) {
+        this.isGenerating = isGenerating;
+        
+        const generateBtn = this.container.querySelector('#generate-btn');
+        const btnText = this.container.querySelector('.btn-text');
+        const btnLoading = this.container.querySelector('#btn-loading');
+        
+        if (generateBtn && btnText && btnLoading) {
+            generateBtn.disabled = isGenerating;
+            
+            if (isGenerating) {
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'flex';
+            } else {
+                btnText.style.display = 'block';
+                btnLoading.style.display = 'none';
             }
-            
-            this.currentUser.imageUsage.daily = usage.daily;
-            this.currentUser.imageUsage.total = usage.total;
-            
-            // 重新渲染界面以更新统计信息
-            this.renderInterface();
-            
-            // 延迟绑定事件
-            setTimeout(() => {
-                this.bindEvents();
-            }, 0);
         }
     }
 
-    // 显示消息
-    showMessage(message, type = 'info') {
-        // 移除现有的消息
-        const existingAlerts = this.container.querySelectorAll('.alert:not(.alert-info)');
-        existingAlerts.forEach(alert => {
-            if (!alert.textContent.includes('💡 使用说明') && !alert.textContent.includes('⚠️ 重要提醒')) {
-                alert.remove();
-            }
-        });
-
-        // 创建新消息
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type}`;
-        
-        // 添加图标
-        const icons = {
-            'info': 'ℹ️',
-            'success': '✅',
-            'warning': '⚠️',
-            'danger': '❌'
-        };
-        
-        alertDiv.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
-        
-        // 插入到生成器界面顶部
-        const generatorInterface = this.container.querySelector('.generator-interface');
-        if (generatorInterface) {
-            const firstChild = generatorInterface.firstElementChild;
-            generatorInterface.insertBefore(alertDiv, firstChild);
-            
-            // 滚动到消息位置
-            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // 显示结果
+    showResult() {
+        const resultContainer = this.container.querySelector('#result-container');
+        if (resultContainer) {
+            resultContainer.style.display = 'block';
         }
-        
-        // 3秒后自动移除（除了错误消息）
-        if (type !== 'danger') {
+    }
+
+    // 隐藏结果
+    hideResult() {
+        const resultContainer = this.container.querySelector('#result-container');
+        if (resultContainer) {
+            resultContainer.style.display = 'none';
+        }
+    }
+
+    // 显示错误
+    showError(message) {
+        const errorElement = this.container.querySelector('#error-message');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    }
+
+    // 隐藏错误
+    hideError() {
+        const errorElement = this.container.querySelector('#error-message');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+
+    // 显示成功消息
+    showSuccess(message) {
+        const successElement = this.container.querySelector('#success-message');
+        if (successElement) {
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            
+            // 3秒后自动隐藏
             setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
+                this.hideSuccess();
             }, 3000);
+        }
+    }
+
+    // 隐藏成功消息
+    hideSuccess() {
+        const successElement = this.container.querySelector('#success-message');
+        if (successElement) {
+            successElement.style.display = 'none';
         }
     }
 }
 
-// 确保类在全局作用域中可用
+// 导出模块
 window.ImageGeneratorModule = ImageGeneratorModule;

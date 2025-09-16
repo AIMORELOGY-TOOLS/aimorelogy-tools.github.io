@@ -716,7 +716,6 @@ class ImageGeneratorModule {
             
             const requestBody = {
                 token: this.currentUser.token,
-                action: 'image_generation',
                 amount: 1,
                 tokenConsumed: tokenConsumed
             };

@@ -1638,6 +1638,138 @@ async function checkUsageLimit(user, featureName) {
 }
 ```
 
+### 使用次数显示位置汇总 (重要：新功能必须同步更新)
+
+#### 主项目前端显示位置
+1. **sections/wechat-login.js** - 登录状态显示
+   ```javascript
+   // 位置：updateLoginStatus函数中
+   // 显示格式："{level} | 今日已使用: {daily}/{limit} 次"
+   // 相关代码：
+   const limitText = user.level === 'admin' ? '无限制' : 
+       (user.limits?.articleDaily || defaultLimits[user.level] || 10);
+   ```
+
+2. **article-generator.html** - 文章生成页面
+   ```javascript
+   // 位置：页面加载时的用户状态显示
+   // 显示格式：用户等级和使用次数
+   // 需要同步：新功能的使用次数显示
+   ```
+
+#### 后台管理系统显示位置
+1. **AIMORELOGY-TOOLS-BACKSTAGE/js/users.js** - 用户列表表格
+   ```javascript
+   // 位置：renderUsers函数，第180行左右
+   // 显示格式："{daily}/{limit} 文章"
+   // 关键代码：
+   <small style="color: #666;">/${this.getLevelLimitNumber(user)}</small>
+   
+   // 重要函数：
+   getLevelLimitNumber(user) {
+       // 返回用户等级对应的限制数字
+       // 管理员返回 '∞'，其他返回具体数字
+   }
+   ```
+
+2. **AIMORELOGY-TOOLS-BACKSTAGE/js/users.js** - 用户详情模态框
+   ```javascript
+   // 位置：showUserModal函数，第380行左右
+   // 显示格式：详细的使用统计卡片
+   // 关键代码：
+   <small style="font-size: 0.8rem; color: #666;"> / ${this.getLevelLimitNumber(user)}</small>
+   <div style="font-size: 11px; color: #888;">等级: ${this.getLevelText(user.level)} (${this.getLevelLimitText(user)})</div>
+   
+   // 重要函数：
+   getLevelLimitText(user) {
+       // 返回用户等级对应的限制文本
+       // 管理员返回 '无限制'，其他返回 '{数字}次/天'
+   }
+   ```
+
+3. **AIMORELOGY-TOOLS-BACKSTAGE/index.html** - 仪表盘统计卡片
+   ```html
+   <!-- 位置：统计卡片区域 -->
+   <!-- 显示格式：功能使用次数统计 -->
+   <!-- 需要同步：新功能的统计卡片 -->
+   <div class="stat-card">
+       <div class="stat-icon">📊</div>
+       <div class="stat-content">
+           <div class="stat-number" id="新功能-count">0</div>
+           <div class="stat-label">新功能使用次数</div>
+       </div>
+   </div>
+   ```
+
+#### 核心函数说明
+```javascript
+// 1. 获取等级限制数字 (用于 x/y 格式显示)
+getLevelLimitNumber(user) {
+    const level = user.level || 'normal';
+    if (level === 'admin') return '∞';
+    
+    const defaultLimits = { 'normal': 10, 'vip': 30, 'svip': 100, 'admin': -1 };
+    const limit = user.limits?.articleDaily !== undefined ? 
+        user.limits.articleDaily : defaultLimits[level];
+    return limit === -1 ? '∞' : limit;
+}
+
+// 2. 获取等级限制文本 (用于描述性显示)
+getLevelLimitText(user) {
+    const level = user.level || 'normal';
+    if (level === 'admin') return '无限制';
+    
+    const defaultLimits = { 'normal': 10, 'vip': 30, 'svip': 100, 'admin': -1 };
+    const limit = user.limits?.articleDaily !== undefined ? 
+        user.limits.articleDaily : defaultLimits[level];
+    return limit === -1 ? '无限制' : `${limit}次/天`;
+}
+
+// 3. 获取等级显示文本
+getLevelText(level) {
+    const levelNames = {
+        'normal': '普通用户',
+        'vip': 'VIP',
+        'svip': 'SVIP', 
+        'admin': '管理员'
+    };
+    return levelNames[level] || '普通用户';
+}
+```
+
+#### 新功能添加时必须同步的位置
+1. **主项目前端**：
+   - 登录状态显示逻辑
+   - 功能页面的使用次数显示
+   - 权限检查和提示信息
+
+2. **后台管理系统**：
+   - 用户列表表格的新功能列
+   - 用户详情模态框的新功能统计
+   - 仪表盘的新功能统计卡片
+   - 图表数据的新功能统计
+
+3. **后端API**：
+   - 用户数据结构扩展
+   - 使用次数统计更新
+   - 权限验证逻辑
+   - 管理员统计接口
+
+#### 数据结构对应关系
+```javascript
+// 用户数据结构中的使用统计
+user.articleUsage = { daily: 0, total: 0, lastResetDate: "2025-09-16" }
+user.新功能Usage = { daily: 0, total: 0, lastResetDate: "2025-09-16" }
+
+// 用户限制配置
+user.limits.articleDaily = 10  // 文章生成每日限制
+user.limits.新功能Daily = 10   // 新功能每日限制
+
+// Token使用统计
+user.tokenUsage.article = { daily: 0, total: 0, lastResetDate: "2025-09-16" }
+user.tokenUsage.新功能 = { daily: 0, total: 0, lastResetDate: "2025-09-16" }
+```
+
 ### 新功能开发检查清单
 - [ ] 前端模块文件创建（/sections/新功能.js）
 - [ ] 页面文件创建（/新功能.html）
@@ -1646,11 +1778,13 @@ async function checkUsageLimit(user, featureName) {
 - [ ] 使用次数统计（update新功能Usage）
 - [ ] Token消耗统计（tokenUsage更新）
 - [ ] 错误处理完善（try-catch + 标准响应）
-- [ ] 后台管理集成（统计卡片 + API接口）
-- [ ] 用户详情显示（使用情况展示）
+- [ ] **主项目使用次数显示同步**（sections/wechat-login.js）
+- [ ] **后台用户列表显示同步**（js/users.js renderUsers函数）
+- [ ] **后台用户详情显示同步**（js/users.js showUserModal函数）
+- [ ] **后台仪表盘统计同步**（index.html + js/main.js）
 - [ ] 等级限制配置（limits对象更新）
 - [ ] 数据结构扩展（用户对象字段）
-- [ ] 测试所有接口（前端调用 + 后台显示）
+- [ ] 测试所有显示位置（前端 + 后台所有相关页面）
 - [ ] 部署验证（三个地址同步更新）
 
 ## 🔄 开发工作流

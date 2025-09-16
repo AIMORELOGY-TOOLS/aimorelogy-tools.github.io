@@ -1202,6 +1202,65 @@ GET  /admin/get_新功能_list     // 获取功能列表
 POST /admin/manage_新功能       // 管理功能设置
 ```
 
+## 📊 最新API接口文档
+
+### Token历史记录接口
+```
+GET  /admin/get_token_history   // 获取7天Token消耗趋势数据
+响应格式: {
+  success: true,
+  dates: ["2025-09-10", "2025-09-11", ..., "2025-09-16"],
+  consumption: [0, 0, 0, 0, 0, 11679, 0]
+}
+```
+
+### 用户管理接口
+```
+GET  /admin/get_all_users       // 获取所有用户列表
+GET  /admin/list_all_keys       // 获取KV存储键列表
+POST /admin/update_user_level   // 更新用户等级
+请求格式: { openid: "用户ID", level: "normal|vip|svip|admin" }
+
+POST /admin/delete_user         // 删除用户
+请求格式: { openid: "用户ID" }
+```
+
+### 用户等级限制配置
+```javascript
+// getUserLimits函数返回的限制配置
+normal: { articleDaily: 10 }     // 普通用户：10次/天
+vip:    { articleDaily: 30 }     // VIP用户：30次/天  
+svip:   { articleDaily: 100 }    // SVIP用户：100次/天
+admin:  { articleDaily: -1 }     // 管理员：无限制
+```
+
+## 🐛 最新修复记录
+
+### 2025-09-16 修复记录
+
+#### 1. Token消耗趋势数据时间更新问题 ✅
+**问题描述**: Token消耗数据不随时间前移，历史数据显示错误日期
+**根本原因**: 历史记录中日期格式不统一（`"Mon Sep 15 2025"` vs `"2025-09-15"`）
+**修复方案**:
+- 添加日期格式转换逻辑，自动将旧格式转换为标准格式
+- 修复 `handleGetTokenHistory` 函数的日期匹配逻辑
+- 更新 `ensureUserTokenHistory` 函数处理格式不一致问题
+
+#### 2. 后台管理系统自动刷新导致KV限制问题 ✅
+**问题描述**: 自动刷新频繁调用KV接口，达到Cloudflare每日限制
+**修复方案**:
+- 禁用自动刷新功能（`autoRefreshEnabled: false`）
+- 移除刷新间隔设置选项
+- 保留手动刷新按钮功能
+- 更新设置页面显示"手动刷新模式：已启用"
+
+#### 3. 用户等级变更后使用次数限制显示问题 ✅
+**问题描述**: 后台管理系统中"12/10 文章 最多使用次数"没有随用户等级变更更新
+**修复方案**:
+- 修复用户列表中的限制显示逻辑：`${user.limits?.articleDaily || getUserLimits(user.level).articleDaily}`
+- 修复用户详情模态框中的限制显示
+- 确保等级变更后立即反映正确的使用限制
+
 ## 🎨 微信公众号排版模块完整文档
 
 ### 功能概述

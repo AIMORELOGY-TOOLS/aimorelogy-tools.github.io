@@ -662,11 +662,15 @@ class ImageGeneratorModule {
         console.log('响应数据:', data);
         
         if (data.success) {
-            this.displayResult(data.imageUrl, data.tokenConsumed);
-            await this.updateUsageCount(data.tokenConsumed || 0);
+            // 根据后端返回的数据结构调整
+            const imageUrl = data.data?.url || data.imageUrl;
+            const tokenConsumed = data.data?.tokenConsumed || data.tokenConsumed || 0;
+            
+            this.displayResult(imageUrl, tokenConsumed);
+            await this.updateUsageCount(tokenConsumed);
             this.showSuccess('图片生成成功！');
         } else {
-            throw new Error(data.error || '图片生成失败');
+            throw new Error(data.error || data.message || '图片生成失败');
         }
     }
 

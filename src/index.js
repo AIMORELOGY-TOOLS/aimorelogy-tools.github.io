@@ -2692,27 +2692,37 @@ async function handleGetTokenHistory(request, env) {
       dailyConsumption[date] = 0;
     });
 
-    // 从历史记录中获取数据（如果存在）
+    const todayStr = today.toISOString().split('T')[0];
+
+    // 遍历所有用户，收集token消耗数据
     for (const user of users) {
-      if (user.tokenUsage && user.tokenUsage.article && user.tokenUsage.article.history) {
-        user.tokenUsage.article.history.forEach(record => {
+      // 先确保用户有历史记录，如果没有则从当前daily数据创建
+      await ensureUserTokenHistory(env, user, todayStr);
+      
+      // 重新获取更新后的用户数据
+      const updatedUserData = await env.WECHAT_KV.get(`user:${user.openid}`);
+      const updatedUser = JSON.parse(updatedUserData);
+      
+      // 从历史记录中获取数据
+      if (updatedUser.tokenUsage && updatedUser.tokenUsage.article && updatedUser.tokenUsage.article.history) {
+        updatedUser.tokenUsage.article.history.forEach(record => {
           if (dailyConsumption.hasOwnProperty(record.date)) {
             dailyConsumption[record.date] += record.tokens;
           }
         });
       }
-    }
 
-    // 今天的数据从当前daily字段获取
-    const todayStr = today.toISOString().split('T')[0];
-    if (dailyConsumption.hasOwnProperty(todayStr)) {
-      let todayTotal = 0;
-      users.forEach(user => {
-        if (user.tokenUsage && user.tokenUsage.article && user.tokenUsage.article.daily) {
-          todayTotal += user.tokenUsage.article.daily;
+      // 今天的数据从daily字段获取（如果今天还有新的消耗）
+      if (updatedUser.tokenUsage && updatedUser.tokenUsage.article) {
+        const userToday = updatedUser.tokenUsage.article.lastResetDate;
+        if (userToday === todayStr && updatedUser.tokenUsage.article.daily > 0) {
+          // 检查历史记录中是否已有今天的记录
+          const todayRecord = updatedUser.tokenUsage.article.history?.find(record => record.date === todayStr);
+          if (!todayRecord) {
+            dailyConsumption[todayStr] += updatedUser.tokenUsage.article.daily;
+          }
         }
-      });
-      dailyConsumption[todayStr] = todayTotal;
+      }
     }
 
     return new Response(JSON.stringify({
@@ -2740,6 +2750,77 @@ async function handleGetTokenHistory(request, env) {
   }
 }
 
+// 新增：确保用户有完整的token历史记录
+async function ensureUserTokenHistory(env, user, todayStr) {
+  try {
+    let needsUpdate = false;
+    
+    // 初始化token使用结构
+    if (!user.tokenUsage) {
+      user.tokenUsage = {};
+      needsUpdate = true;
+    }
+    if (!user.tokenUsage.article) {
+      user.tokenUsage.article = {
+        daily: 0,
+        total: 0,
+        lastResetDate: todayStr,
+        history: []
+      };
+      needsUpdate = true;
+    }
+    if (!user.tokenUsage.article.history) {
+      user.tokenUsage.article.history = [];
+      needsUpdate = true;
+    }
+
+    // 检查是否需要将昨天的数据转移到历史记录
+    const lastResetDate = user.tokenUsage.article.lastResetDate;
+    if (lastResetDate && lastResetDate !== todayStr) {
+      // 如果有昨天的消耗数据，将其添加到历史记录
+      if (user.tokenUsage.article.daily > 0) {
+        // 检查历史记录中是否已存在该日期的记录
+        const existingRecord = user.tokenUsage.article.history.find(record => record.date === lastResetDate);
+        if (!existingRecord) {
+          user.tokenUsage.article.history.push({
+            date: lastResetDate,
+            tokens: user.tokenUsage.article.daily
+          });
+          needsUpdate = true;
+        }
+      }
+      
+      // 重置今日计数
+      user.tokenUsage.article.daily = 0;
+      user.tokenUsage.article.lastResetDate = todayStr;
+      needsUpdate = true;
+    }
+
+    // 清理超过7天的历史记录
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const cutoffDate = sevenDaysAgo.toISOString().split('T')[0];
+    
+    const originalLength = user.tokenUsage.article.history.length;
+    user.tokenUsage.article.history = user.tokenUsage.article.history
+      .filter(record => record.date > cutoffDate)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    if (user.tokenUsage.article.history.length !== originalLength) {
+      needsUpdate = true;
+    }
+
+    // 如果有更新，保存用户数据
+    if (needsUpdate) {
+      await env.WECHAT_KV.put(`user:${user.openid}`, JSON.stringify(user));
+      console.log(`更新用户 ${user.openid} 的token历史记录`);
+    }
+    
+  } catch (error) {
+    console.error('确保用户token历史记录失败:', error);
+  }
+}
+
 // 新增：更新用户token历史记录的辅助函数
 async function updateUserTokenHistory(env, openid, tokenConsumed) {
   if (tokenConsumed <= 0) return;
@@ -2756,13 +2837,34 @@ async function updateUserTokenHistory(env, openid, tokenConsumed) {
     if (!user.tokenUsage.article) user.tokenUsage.article = {};
     if (!user.tokenUsage.article.history) user.tokenUsage.article.history = [];
 
-    // 查找今天的记录
+    // 检查是否需要处理日期变更
+    const lastResetDate = user.tokenUsage.article.lastResetDate;
+    if (lastResetDate && lastResetDate !== today) {
+      // 将昨天的daily数据转移到历史记录
+      if (user.tokenUsage.article.daily > 0) {
+        const existingRecord = user.tokenUsage.article.history.find(record => record.date === lastResetDate);
+        if (!existingRecord) {
+          user.tokenUsage.article.history.push({
+            date: lastResetDate,
+            tokens: user.tokenUsage.article.daily
+          });
+          console.log(`将用户 ${openid} 的 ${lastResetDate} 数据 ${user.tokenUsage.article.daily} tokens 转移到历史记录`);
+        }
+      }
+      
+      // 重置今日计数
+      user.tokenUsage.article.daily = 0;
+      user.tokenUsage.article.lastResetDate = today;
+    }
+
+    // 查找今天的历史记录
     let todayRecord = user.tokenUsage.article.history.find(record => record.date === today);
     
     if (todayRecord) {
+      // 如果今天已有历史记录，更新它
       todayRecord.tokens += tokenConsumed;
     } else {
-      // 添加新的今日记录
+      // 如果今天没有历史记录，添加新记录
       user.tokenUsage.article.history.push({
         date: today,
         tokens: tokenConsumed
@@ -2780,6 +2882,8 @@ async function updateUserTokenHistory(env, openid, tokenConsumed) {
 
     // 保存更新后的用户数据
     await env.WECHAT_KV.put(`user:${openid}`, JSON.stringify(user));
+    
+    console.log(`更新用户 ${openid} token历史记录: +${tokenConsumed} tokens on ${today}`);
     
   } catch (error) {
     console.error('更新用户token历史记录失败:', error);

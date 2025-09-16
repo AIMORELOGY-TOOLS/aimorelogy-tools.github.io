@@ -396,15 +396,15 @@
                 </div>
 
                 <!-- 图片生成模块 -->
-                <div class="module-card">
+                <div class="module-card" data-module="image-generator">
                     <span class="module-icon">🎨</span>
                     <h3 class="module-title">AI 图片生成</h3>
                     <p class="module-description">
-                        根据文字描述生成高质量图片，为文章配图。支持多种艺术风格和尺寸。
+                        基于豆包Seedream 4.0模型，将文字描述转化为精美图片。支持多种尺寸和风格，为您的内容创作提供完美配图。
                     </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
+                    <span class="module-status status-available">现已上线</span>
+                    <button class="module-button btn-primary" onclick="openImageGenerator()">
+                        立即使用
                     </button>
                 </div>
             </div>
@@ -467,7 +467,7 @@
                 const moduleType = card.getAttribute('data-module');
                 
                 // 已接入的功能模块列表
-                const availableModules = ['article-generator', 'wechat-format'];
+                const availableModules = ['article-generator', 'wechat-format', 'image-generator'];
                 
                 if (userData) {
                     // 用户已登录
@@ -551,6 +551,17 @@
             
             // 跳转到微信公众号排版页面
             window.location.href = 'markdown-editor.html?mode=wechat';
+        }
+
+        // 打开AI图片生成器
+        function openImageGenerator() {
+            if (!wechatLogin.getCurrentUser()) {
+                alert('请先登录后使用此功能');
+                return;
+            }
+            
+            // 跳转到图片生成页面
+            window.location.href = 'image-generator.html';
         }
 
         // 全局函数，供其他模块调用

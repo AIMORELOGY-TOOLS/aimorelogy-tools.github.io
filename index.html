@@ -3,560 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIMORELOGY TOOLS - AI文章生成平台</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        /* 头部导航 */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .logo-icon {
-            font-size: 32px;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: #666;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: #667eea;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* 主要内容区域 */
-        .main-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .hero-section {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .hero-title {
-            font-size: 3.5em;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 20px;
-            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .hero-subtitle {
-            font-size: 1.2em;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .hero-features {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 40px;
-            flex-wrap: wrap;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 16px;
-        }
-
-        .feature-icon {
-            font-size: 24px;
-        }
-
-        /* 功能模块区域 */
-        .modules-section {
-            margin-top: 60px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5em;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 40px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .module-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .module-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .module-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .module-title {
-            font-size: 1.5em;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .module-description {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .module-status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 20px;
-        }
-
-        .status-available {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-coming-soon {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .module-button {
-            width: 100%;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-disabled {
-            background: #f8f9fa;
-            color: #6c757d;
-            cursor: not-allowed;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-
-            .hero-title {
-                font-size: 2.5em;
-            }
-
-            .hero-features {
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .modules-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-container {
-                padding: 0 15px;
-            }
-
-            .main-container {
-                padding: 20px 15px;
-            }
-        }
-
-        /* 用户等级样式 */
-        .user-level-normal { background: #909399; }
-        .user-level-vip { background: #E6A23C; }
-        .user-level-svip { background: #F56C6C; }
-        .user-level-admin { background: #67C23A; }
-    </style>
+    <title>AIMORELOGY 用户管理后台</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/users.css">
 </head>
 <body>
-    <!-- 头部导航 -->
-    <header class="header">
-        <div class="nav-container">
-            <a href="#" class="logo">
-                <span class="logo-icon">🤖</span>
-                <span>AIMORELOGY</span>
-            </a>
-            
-            <nav>
-                <ul class="nav-menu">
-                    <li><a href="#home">首页</a></li>
-                    <li><a href="#features">功能</a></li>
-                    <li><a href="#pricing">定价</a></li>
-                    <li><a href="#about">关于</a></li>
-                </ul>
-            </nav>
-            
-            <div class="user-section">
-                <!-- 微信登录模块将在这里渲染 -->
-                <div id="wechat-login-container"></div>
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-cogs"></i> 管理后台</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>仪表盘</span>
+                </li>
+                <li class="menu-item" data-page="users">
+                    <i class="fas fa-users"></i>
+                    <span>用户管理</span>
+                </li>
+                <li class="menu-item" data-page="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>数据分析</span>
+                </li>
+                <li class="menu-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航 -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">仪表盘</h1>
+                </div>
+                <div class="header-right">
+                    <button class="refresh-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <div class="admin-info">
+                        <i class="fas fa-user-shield"></i>
+                        <span>管理员</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 页面内容 -->
+            <div class="page-content">
+                <!-- 仪表盘页面 -->
+                <div id="dashboard-page" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-users">-</h3>
+                                <p>总用户数</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="vip-users">-</h3>
+                                <p>VIP用户</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="svip-users">-</h3>
+                                <p>SVIP用户</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="daily-active">-</h3>
+                                <p>今日活跃</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-tokens">-</h3>
+                                <p>总Token消耗</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="daily-tokens">-</h3>
+                                <p>今日Token消耗</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>用户等级分布</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="userLevelChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h3>最近7天注册趋势</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="registrationChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户管理页面 -->
+                <div id="users-page" class="page">
+                    <div class="page-header">
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="user-search" placeholder="搜索用户昵称或OpenID...">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="level-filter">
+                                <option value="">所有等级</option>
+                                <option value="normal">普通用户</option>
+                                <option value="vip">VIP</option>
+                                <option value="svip">SVIP</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>头像</th>
+                                    <th>昵称</th>
+                                    <th>OpenID</th>
+                                    <th>等级</th>
+                                    <th>注册时间</th>
+                                    <th>最后登录</th>
+                                    <th>文章次数</th>
+                                    <th>Token消耗</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- 用户数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination">
+                        <button id="prev-page" class="page-btn">上一页</button>
+                        <span id="page-info">第 1 页，共 1 页</span>
+                        <button id="next-page" class="page-btn">下一页</button>
+                    </div>
+                </div>
+
+                <!-- 数据分析页面 -->
+                <div id="analytics-page" class="page">
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>使用统计</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="usageChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>用户活跃度</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Token消耗分布</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="tokenDistributionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Token消耗趋势</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="tokenTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统设置页面 -->
+                <div id="settings-page" class="page">
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h3>API配置</h3>
+                            <div class="setting-item">
+                                <label>后端API地址:</label>
+                                <input type="text" id="api-url" value="https://aimorelogybackend.site">
+                            </div>
+                            <div class="setting-item">
+                                <label>手动刷新模式:</label>
+                                <span style="color: #28a745;">已启用 - 点击"刷新数据"按钮手动更新</span>
+                            </div>
+                            <button class="save-btn" onclick="saveSettings()">保存设置</button>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <h3>系统信息</h3>
+                            <div class="system-info">
+                                <p><strong>版本:</strong> v1.0.0</p>
+                                <p><strong>最后更新:</strong> <span id="last-update">-</span></p>
+                                <p><strong>API状态:</strong> <span id="api-status" class="status-indicator">检查中...</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 用户详情模态框 -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>用户详情</h3>
+                <span class="close" onclick="closeUserModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="user-modal-body">
+                <!-- 用户详情内容 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeUserModal()">关闭</button>
+                <button class="btn btn-primary" onclick="saveUserChanges()">保存更改</button>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- 主要内容 -->
-    <main class="main-container">
-        <!-- 英雄区域 -->
-        <section class="hero-section">
-            <h1 class="hero-title">AI 智能创作平台</h1>
-            <p class="hero-subtitle">
-                基于先进的人工智能技术，为您提供高质量的内容创作服务<br>
-                模块化设计，灵活扩展，满足不同场景的创作需求
-            </p>
-            
-            <div class="hero-features">
-                <div class="feature-item">
-                    <span class="feature-icon">⚡</span>
-                    <span>快速生成</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🎯</span>
-                    <span>精准定制</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🔒</span>
-                    <span>安全可靠</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">📱</span>
-                    <span>多端支持</span>
-                </div>
-            </div>
-        </section>
+    <!-- 加载指示器 -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
 
-        <!-- 功能模块区域 -->
-        <section class="modules-section">
-            <h2 class="section-title">功能模块</h2>
-            
-            <div class="modules-grid">
-                <!-- AI 文章生成模块 -->
-                <div class="module-card" data-module="article-generator">
-                    <span class="module-icon">📝</span>
-                    <h3 class="module-title">公众号爆文生成</h3>
-                    <p class="module-description">
-                        基于 DeepSeek 大模型，智能生成高质量公众号文章内容。支持自定义主题、参考文章和字数限制。
-                    </p>
-                    <span class="module-status status-available">现已上线</span>
-                    <button class="module-button btn-primary" onclick="openArticleGenerator()">
-                        立即使用
-                    </button>
-                </div>
-
-                <!-- 微信公众号排版模块 -->
-                <div class="module-card" data-module="wechat-format">
-                    <span class="module-icon">🎨</span>
-                    <h3 class="module-title">微信公众号排版</h3>
-                    <p class="module-description">
-                        专业的微信公众号内容排版工具，支持多种主题、自定义样式、图片上传和手机预览，让您的公众号文章更加美观。
-                    </p>
-                    <span class="module-status status-available">现已上线</span>
-                    <button class="module-button btn-primary" onclick="openWechatFormat()">
-                        立即使用
-                    </button>
-                </div>
-
-                <!-- 智能写作助手模块 -->
-                <div class="module-card">
-                    <span class="module-icon">✍️</span>
-                    <h3 class="module-title">智能写作助手</h3>
-                    <p class="module-description">
-                        AI驱动的写作助手，提供文章大纲生成、段落扩写、语言润色等功能，提升写作效率和质量。
-                    </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
-                    </button>
-                </div>
-
-                <!-- 内容优化模块 -->
-                <div class="module-card">
-                    <span class="module-icon">✨</span>
-                    <h3 class="module-title">内容优化</h3>
-                    <p class="module-description">
-                        智能优化文章结构和表达，提升内容质量。包括语法检查、风格调整等功能。
-                    </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
-                    </button>
-                </div>
-
-                <!-- SEO 优化模块 -->
-                <div class="module-card">
-                    <span class="module-icon">🔍</span>
-                    <h3 class="module-title">SEO 优化</h3>
-                    <p class="module-description">
-                        针对搜索引擎优化内容，提升文章排名。自动生成关键词和元描述。
-                    </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
-                    </button>
-                </div>
-
-                <!-- 多语言翻译模块 -->
-                <div class="module-card">
-                    <span class="module-icon">🌍</span>
-                    <h3 class="module-title">多语言翻译</h3>
-                    <p class="module-description">
-                        支持多种语言间的智能翻译，保持原文语义和风格。适用于国际化内容创作。
-                    </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
-                    </button>
-                </div>
-
-                <!-- 图片生成模块 -->
-                <div class="module-card">
-                    <span class="module-icon">🎨</span>
-                    <h3 class="module-title">AI 图片生成</h3>
-                    <p class="module-description">
-                        根据文字描述生成高质量图片，为文章配图。支持多种艺术风格和尺寸。
-                    </p>
-                    <span class="module-status status-coming-soon">即将上线</span>
-                    <button class="module-button btn-disabled" disabled>
-                        敬请期待
-                    </button>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- 引入微信登录模块 -->
-    <script src="sections/wechat-login.js"></script>
-    <!-- 引入文章生成模块 -->
-    <script src="sections/article-generator.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        // 初始化微信登录模块
-        let wechatLogin;
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            // 创建微信登录实例
-            wechatLogin = new WeChatLoginModule({
-                apiBaseUrl: 'https://aimorelogybackend.site'
-            });
-            
-            // 渲染到导航栏
-            const container = document.getElementById('wechat-login-container');
-            wechatLogin.render(container);
-            
-            // 监听登录状态变化
-            document.addEventListener('wechatLoginStatusChange', function(event) {
-                const { isLoggedIn, userData } = event.detail;
-                
-                if (isLoggedIn) {
-                    console.log('用户已登录:', userData);
-                    // 可以在这里添加登录后的逻辑
-                    updateModulesAccess(userData);
-                } else {
-                    console.log('用户已退出登录');
-                    // 可以在这里添加退出登录后的逻辑
-                    updateModulesAccess(null);
-                }
-            });
-            
-            // 检查初始登录状态并更新UI
-            setTimeout(() => {
-                const currentUser = wechatLogin.getCurrentUser();
-                if (currentUser) {
-                    console.log('页面加载时发现已登录用户:', currentUser);
-                    updateModulesAccess(currentUser);
-                } else {
-                    updateModulesAccess(null);
-                }
-            }, 100);
-        });
-
-        // 更新模块访问权限
-        function updateModulesAccess(userData) {
-            const moduleCards = document.querySelectorAll('.module-card');
-            
-            moduleCards.forEach(card => {
-                const button = card.querySelector('.module-button');
-                const status = card.querySelector('.module-status');
-                const moduleType = card.getAttribute('data-module');
-                
-                // 已接入的功能模块列表
-                const availableModules = ['article-generator', 'wechat-format'];
-                
-                if (userData) {
-                    // 用户已登录
-                    if (availableModules.includes(moduleType)) {
-                        // 已接入的模块对所有登录用户开放
-                        button.textContent = '立即使用';
-                        button.className = 'module-button btn-primary';
-                        button.disabled = false;
-                        status.textContent = '现已上线';
-                        status.className = 'module-status status-available';
-                    } else {
-                        // 未接入的模块对所有用户都显示敬请期待
-                        button.textContent = '敬请期待';
-                        button.className = 'module-button btn-disabled';
-                        button.disabled = true;
-                        status.textContent = '即将上线';
-                        status.className = 'module-status status-coming-soon';
-                    }
-                } else {
-                    // 用户未登录
-                    if (availableModules.includes(moduleType)) {
-                        // 已接入的模块显示功能入口但需要登录
-                        button.textContent = '立即使用';
-                        button.className = 'module-button btn-primary';
-                        button.disabled = false;
-                        status.textContent = '现已上线';
-                        status.className = 'module-status status-available';
-                    } else {
-                        // 未接入的模块显示即将上线
-                        button.textContent = '敬请期待';
-                        button.className = 'module-button btn-disabled';
-                        button.disabled = true;
-                        status.textContent = '即将上线';
-                        status.className = 'module-status status-coming-soon';
-                    }
-                }
-            });
+        // 确保Chart.js加载完成
+        window.chartJsLoaded = false;
+        if (typeof Chart !== 'undefined') {
+            window.chartJsLoaded = true;
+            console.log('Chart.js加载成功');
+        } else {
+            console.error('Chart.js加载失败');
         }
-
-        // 模块点击处理
-        function handleModuleClick(moduleType) {
-            if (!wechatLogin.getCurrentUser()) {
-                alert('请先登录后使用此功能');
-                return;
-            }
-            
-            const permission = wechatLogin.checkPermission('normal');
-            if (!permission.allowed) {
-                alert(permission.reason);
-                return;
-            }
-            
-            // 这里添加具体模块的逻辑
-            console.log('启动模块:', moduleType);
-            
-            // 示例：增加使用次数
-            wechatLogin.incrementUsage(moduleType).then(result => {
-                console.log('使用次数已更新:', result);
-            }).catch(error => {
-                console.error('更新使用次数失败:', error);
-            });
-        }
-
-        // 打开文章生成器
-        function openArticleGenerator() {
-            if (!wechatLogin.getCurrentUser()) {
-                alert('请先登录后使用此功能');
-                return;
-            }
-            
-            // 创建文章生成器页面
-            window.location.href = 'article-generator.html';
-        }
-
-        // 打开微信公众号排版工具
-        function openWechatFormat() {
-            if (!wechatLogin.getCurrentUser()) {
-                alert('请先登录后使用此功能');
-                return;
-            }
-            
-            // 跳转到微信公众号排版页面
-            window.location.href = 'markdown-editor.html?mode=wechat';
-        }
-
-        // 全局函数，供其他模块调用
-        window.getWeChatLogin = function() {
-            return wechatLogin;
-        };
     </script>
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

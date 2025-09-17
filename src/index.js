@@ -521,6 +521,9 @@ async function handleGetTokenStats(request, env) {
     let totalTokens = 0;
     let dailyTokens = 0;
     let articleTokens = 0;
+    let imageTokens = 0;
+    let dailyArticleTokens = 0;
+    let dailyImageTokens = 0;
     let userStats = [];
     
     const today = getChinaDateString();
@@ -530,32 +533,67 @@ async function handleGetTokenStats(request, env) {
       if (userData) {
         const user = JSON.parse(userData);
         
+        let userTotalTokens = 0;
+        let userDailyTokens = 0;
+        let userArticleTokens = 0;
+        let userImageTokens = 0;
+        let userDailyArticleTokens = 0;
+        let userDailyImageTokens = 0;
+        
+        // 统计文章token消耗
         if (user.tokenUsage && user.tokenUsage.article) {
           const articleUsage = user.tokenUsage.article;
           
-          // 统计总token消耗
-          totalTokens += articleUsage.total || 0;
-          articleTokens += articleUsage.total || 0;
+          userArticleTokens = articleUsage.total || 0;
+          totalTokens += userArticleTokens;
+          articleTokens += userArticleTokens;
           
-          // 统计今日token消耗
+          // 统计今日文章token消耗
           if (articleUsage.lastResetDate === today) {
-            dailyTokens += articleUsage.daily || 0;
+            userDailyArticleTokens = articleUsage.daily || 0;
+            dailyTokens += userDailyArticleTokens;
+            dailyArticleTokens += userDailyArticleTokens;
           }
+        }
+        
+        // 统计图片token消耗
+        if (user.tokenUsage && user.tokenUsage.image) {
+          const imageUsage = user.tokenUsage.image;
           
-          // 用户个人统计
+          userImageTokens = imageUsage.total || 0;
+          totalTokens += userImageTokens;
+          imageTokens += userImageTokens;
+          
+          // 统计今日图片token消耗
+          if (imageUsage.lastResetDate === today) {
+            userDailyImageTokens = imageUsage.daily || 0;
+            dailyTokens += userDailyImageTokens;
+            dailyImageTokens += userDailyImageTokens;
+          }
+        }
+        
+        userTotalTokens = userArticleTokens + userImageTokens;
+        userDailyTokens = userDailyArticleTokens + userDailyImageTokens;
+        
+        // 用户个人统计
+        if (userTotalTokens > 0 || userDailyTokens > 0) {
           userStats.push({
             openid: user.openid,
             nickname: user.nickname,
             level: user.level,
-            articleTokens: articleUsage.total || 0,
-            dailyArticleTokens: articleUsage.lastResetDate === today ? (articleUsage.daily || 0) : 0
+            totalTokens: userTotalTokens,
+            dailyTokens: userDailyTokens,
+            articleTokens: userArticleTokens,
+            imageTokens: userImageTokens,
+            dailyArticleTokens: userDailyArticleTokens,
+            dailyImageTokens: userDailyImageTokens
           });
         }
       }
     }
     
-    // 按token消耗排序
-    userStats.sort((a, b) => b.articleTokens - a.articleTokens);
+    // 按总token消耗排序
+    userStats.sort((a, b) => b.totalTokens - a.totalTokens);
     
     return new Response(JSON.stringify({
       success: true,
@@ -563,6 +601,9 @@ async function handleGetTokenStats(request, env) {
         totalTokens,
         dailyTokens,
         articleTokens,
+        imageTokens,
+        dailyArticleTokens,
+        dailyImageTokens,
         topUsers: userStats.slice(0, 10) // 返回前10名用户
       }
     }), {

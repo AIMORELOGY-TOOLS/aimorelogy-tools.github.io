@@ -1897,13 +1897,43 @@ getLevelText(level) {
    - 按消耗量分组：0 Token、1-100 Token、101-500 Token、501-1000 Token、1000+ Token
 
 4. `createTokenTrendChart()` - Token消耗趋势图
-   - 分别显示文章生成和图片生成的Token消耗趋势
-   - 最近7天的每日消耗数据对比
+   - 显示总Token消耗趋势（文章生成 + 图片生成）
+   - 最近7天的每日消耗数据
 
 **数据来源：**
 - 使用 `window.adminAPI.getAllUsersNew()` 获取用户详细数据
 - 数据结构包含 `articleUsage`、`imageUsage`、`tokenUsage` 字段
 - 自动计算每日和总计统计数据
+
+#### Token统计功能更新 (2025-09-17)
+**更新内容：**
+1. **后端API更新** (`src/index.js` - `handleGetTokenStats`函数)：
+   - 新增图片生成Token统计支持
+   - 分别统计文章生成和图片生成的Token消耗
+   - 返回数据包含：`totalTokens`, `dailyTokens`, `articleTokens`, `imageTokens`, `dailyArticleTokens`, `dailyImageTokens`
+
+2. **前端显示更新** (`AIMORELOGY-TOOLS-BACKSTAGE/js/main.js`)：
+   - 新增 `updateTokenCardDetails()` 方法
+   - Token统计卡片显示分类信息：
+     - "今日Token消耗" 显示：文章Token数 | 图片Token数
+     - "总Token消耗" 显示：文章Token数 | 图片Token数
+   - 保持总数显示不变，增加分类详情
+
+**显示效果：**
+```
+今日Token消耗
+1,250
+文章: 800 | 图片: 450
+
+总Token消耗  
+15,680
+文章: 12,300 | 图片: 3,380
+```
+
+**技术实现：**
+- 后端统计时同时计算文章和图片的Token消耗
+- 前端接收到数据后动态更新卡片显示
+- 使用小字体显示分类信息，不影响主要数据展示
 
 3. **后端API**：
    - 用户数据结构扩展

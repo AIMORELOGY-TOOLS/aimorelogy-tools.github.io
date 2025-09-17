@@ -9,6 +9,7 @@ class WeChatFormatModule {
         };
         this.currentUser = options.user || null;
         this.wechatLogin = options.wechatLogin || null;
+        this.headerComponent = null;
         
         // 微信公众号专用样式主题
         this.wechatThemes = {
@@ -74,6 +75,9 @@ class WeChatFormatModule {
     async init(container) {
         this.container = container;
         
+        // 初始化Header组件
+        await this.initHeader();
+        
         // 检查登录状态
         if (this.wechatLogin) {
             const user = this.wechatLogin.getCurrentUser();
@@ -87,6 +91,45 @@ class WeChatFormatModule {
         await this.render();
         this.bindEvents();
         this.loadDraft();
+    }
+
+    // 初始化Header组件
+    async initHeader() {
+        try {
+            // 检查是否已经有Header组件
+            if (window.headerComponent) {
+                this.headerComponent = window.headerComponent;
+            } else {
+                // 动态加载Header组件
+                if (!window.HeaderComponent) {
+                    await this.loadHeaderScript();
+                }
+                this.headerComponent = new window.HeaderComponent();
+                window.headerComponent = this.headerComponent;
+            }
+            
+            // 加载Header HTML
+            await this.headerComponent.loadHeader();
+            
+        } catch (error) {
+            console.error('初始化Header组件失败:', error);
+        }
+    }
+
+    // 动态加载Header脚本
+    async loadHeaderScript() {
+        return new Promise((resolve, reject) => {
+            if (document.querySelector('script[src*="header.js"]')) {
+                resolve();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = '../js/header.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
     // 显示需要登录的提示

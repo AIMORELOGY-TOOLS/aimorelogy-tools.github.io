@@ -452,9 +452,13 @@ async function handleGetAllUsers(request, env) {
         if (!user.articleUsage) {
           user.articleUsage = { daily: 0, total: 0, lastResetDate: getChinaDateString() };
         }
+        if (!user.imageUsage) {
+          user.imageUsage = { daily: 0, total: 0, lastResetDate: getChinaDateString() };
+        }
         if (!user.tokenUsage) {
           user.tokenUsage = {
-            article: { daily: 0, total: 0, lastResetDate: getChinaDateString() }
+            article: { daily: 0, total: 0, lastResetDate: getChinaDateString() },
+            image: { daily: 0, total: 0, lastResetDate: getChinaDateString() }
           };
         }
         
@@ -467,6 +471,7 @@ async function handleGetAllUsers(request, env) {
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
           articleUsage: user.articleUsage,
+          imageUsage: user.imageUsage,
           tokenUsage: user.tokenUsage
         });
       }
@@ -2739,7 +2744,7 @@ async function handleGetTokenHistory(request, env) {
       const updatedUserData = await env.WECHAT_KV.get(`user:${user.openid}`);
       const updatedUser = JSON.parse(updatedUserData);
       
-      // 从历史记录中获取数据
+      // 从历史记录中获取数据 - 文章生成Token
       if (updatedUser.tokenUsage && updatedUser.tokenUsage.article && updatedUser.tokenUsage.article.history) {
         updatedUser.tokenUsage.article.history.forEach(record => {
           // 处理不同的日期格式
@@ -2759,12 +2764,37 @@ async function handleGetTokenHistory(request, env) {
           
           if (dailyConsumption.hasOwnProperty(recordDate)) {
             dailyConsumption[recordDate] += record.tokens;
-            console.log(`添加历史数据: ${recordDate} = ${record.tokens} tokens`);
+            console.log(`添加文章生成历史数据: ${recordDate} = ${record.tokens} tokens`);
           }
         });
       }
 
-      // 今天的数据从daily字段获取（如果今天还有新的消耗）
+      // 从历史记录中获取数据 - 图片生成Token
+      if (updatedUser.tokenUsage && updatedUser.tokenUsage.image && updatedUser.tokenUsage.image.history) {
+        updatedUser.tokenUsage.image.history.forEach(record => {
+          // 处理不同的日期格式
+          let recordDate = record.date;
+          
+          // 如果是旧格式 "Mon Sep 15 2025"，转换为 "2025-09-15"
+          if (recordDate && !recordDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            try {
+              const date = new Date(recordDate);
+              if (!isNaN(date.getTime())) {
+                recordDate = date.toISOString().split('T')[0];
+              }
+            } catch (e) {
+              console.error('日期格式转换失败:', recordDate, e);
+            }
+          }
+          
+          if (dailyConsumption.hasOwnProperty(recordDate)) {
+            dailyConsumption[recordDate] += record.tokens;
+            console.log(`添加图片生成历史数据: ${recordDate} = ${record.tokens} tokens`);
+          }
+        });
+      }
+
+      // 今天的数据从daily字段获取（如果今天还有新的消耗）- 文章生成
       if (updatedUser.tokenUsage && updatedUser.tokenUsage.article) {
         const userToday = updatedUser.tokenUsage.article.lastResetDate;
         if (userToday === todayStr && updatedUser.tokenUsage.article.daily > 0) {
@@ -2772,6 +2802,18 @@ async function handleGetTokenHistory(request, env) {
           const todayRecord = updatedUser.tokenUsage.article.history?.find(record => record.date === todayStr);
           if (!todayRecord) {
             dailyConsumption[todayStr] += updatedUser.tokenUsage.article.daily;
+          }
+        }
+      }
+
+      // 今天的数据从daily字段获取（如果今天还有新的消耗）- 图片生成
+      if (updatedUser.tokenUsage && updatedUser.tokenUsage.image) {
+        const userToday = updatedUser.tokenUsage.image.lastResetDate;
+        if (userToday === todayStr && updatedUser.tokenUsage.image.daily > 0) {
+          // 检查历史记录中是否已有今天的记录
+          const todayRecord = updatedUser.tokenUsage.image.history?.find(record => record.date === todayStr);
+          if (!todayRecord) {
+            dailyConsumption[todayStr] += updatedUser.tokenUsage.image.daily;
           }
         }
       }

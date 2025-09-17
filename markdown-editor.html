@@ -153,8 +153,10 @@
                     
                     if (isLoggedIn) {
                         console.log('用户已登录:', userData);
-                        // 重新加载页面以应用新的用户状态
-                        window.location.reload();
+                        // 设置当前用户到编辑器
+                        if (editor && editor.setCurrentUser) {
+                            editor.setCurrentUser(userData);
+                        }
                     } else {
                         console.log('用户已退出登录');
                         // 跳转到登录页面

@@ -1,0 +1,30 @@
+<!-- 通用头部导航组件 -->
+<header class="header">
+    <div class="nav-container">
+        <a href="index.html" class="logo">
+            <span class="logo-icon">🤖</span>
+            <span>AIMORELOGY</span>
+        </a>
+        
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="index.html">首页</a></li>
+                <li class="dropdown">
+                    <a href="#features">功能</a>
+                    <div class="dropdown-content">
+                        <a href="article-generator.html">公众号爆文生成</a>
+                        <a href="markdown-editor.html?mode=wechat">微信公众号排版</a>
+                        <a href="image-generator.html">AI 图片生成</a>
+                    </div>
+                </li>
+                <li><a href="index.html#pricing">定价</a></li>
+                <li><a href="#about">关于</a></li>
+            </ul>
+        </nav>
+        
+        <div class="user-section">
+            <!-- 微信登录模块将在这里渲染 -->
+            <div id="wechat-login-container"></div>
+        </div>
+    </div>
+</header>

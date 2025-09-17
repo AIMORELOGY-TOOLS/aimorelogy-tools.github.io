@@ -101,20 +101,151 @@ markdown-editor.html?mode=markdown → MarkdownEditorModule → 通用Markdown�
 d:/wechat_login/
 ├── index.html                 # 主页面
 ├── article-generator.html     # 文章生成页面
+├── image-generator.html       # 图片生成页面
 ├── wechat-login.html         # 登录页面
+├── components/               # 公共组件
+│   └── header.html          # 统一Header组件模板
 ├── sections/                 # 功能模块
 │   ├── wechat-login.js      # 登录模块
 │   ├── article-generator.js  # 文章生成模块
+│   ├── image-generator.js   # 图片生成模块
 │   ├── markdown-editor.js   # Markdown编辑器模块
 │   ├── markdown-editor.css  # Markdown编辑器样式
 │   ├── wechat-format.js     # 微信公众号排版模块
 │   └── wechat-format.css    # 微信公众号排版样式
+├── js/                      # JavaScript组件
+│   ├── main.js             # 主控制脚本
+│   └── header.js           # Header组件控制器
+├── styles/                  # 样式文件
+│   ├── main.css            # 主样式文件
+│   └── header.css          # Header组件样式
 ├── markdown-editor.html     # 编辑器页面（支持双模式）
 ├── src/                     # 后端代码
 │   ├── index.js            # 主入口
 │   └── session.js          # 会话管理
 ├── wrangler.toml           # Cloudflare配置
 └── package.json            # 依赖配置
+```
+
+## 🎨 统一Header组件系统
+
+### Header组件架构
+```
+HeaderComponent (js/header.js)
+├── 组件模板 (components/header.html)
+│   ├── Logo区域
+│   ├── 导航菜单
+│   │   ├── 首页链接
+│   │   ├── 功能下拉菜单
+│   │   │   ├── AI 文章生成
+│   │   │   ├── AI 图片生成
+│   │   │   └── AI 智能对话
+│   │   └── 定价链接
+│   └── 用户信息区域
+├── 样式系统 (styles/header.css)
+│   ├── 基础布局样式
+│   ├── 下拉菜单样式
+│   ├── 响应式设计
+│   └── 毛玻璃效果
+└── 交互逻辑
+    ├── 下拉菜单控制
+    ├── 用户状态显示
+    └── 动态加载机制
+```
+
+### Header组件使用方法
+
+#### 1. 页面集成
+```html
+<!-- 在页面head中引入样式 -->
+<link rel="stylesheet" href="styles/header.css">
+
+<!-- 在body开始处，Header组件会自动插入 -->
+<body>
+    <!-- Header组件将通过JavaScript动态加载 -->
+    
+    <!-- 页面内容 -->
+    <main>...</main>
+    
+    <!-- 在页面底部引入组件脚本 -->
+    <script src="js/header.js"></script>
+</body>
+```
+
+#### 2. 组件初始化
+```javascript
+// Header组件会自动初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // HeaderComponent会自动创建实例并加载
+    new HeaderComponent();
+});
+```
+
+#### 3. 下拉菜单扩展接口
+```javascript
+// 在header.js中预留的扩展接口
+class HeaderComponent {
+    constructor() {
+        this.menuItems = [
+            { name: 'AI 文章生成', url: 'article-generator.html' },
+            { name: 'AI 图片生成', url: 'image-generator.html' },
+            { name: 'AI 智能对话', url: 'chat.html' }
+            // 新功能模块可以在这里添加
+        ];
+    }
+    
+    // 动态添加菜单项的方法
+    addMenuItem(name, url) {
+        this.menuItems.push({ name, url });
+        this.updateDropdownMenu();
+    }
+}
+```
+
+#### 4. 定价方案配置
+```javascript
+// 定价方案数据结构
+const pricingPlans = [
+    {
+        name: '免费计划',
+        price: '¥0',
+        period: '/月',
+        features: [
+            'AI 文章生成：3次/天',
+            'AI 图片生成：3次/天',
+            'AI 智能对话：10次/天'
+        ],
+        buttonText: '登录即享',
+        buttonClass: 'btn-free'
+    },
+    {
+        name: 'VIP',
+        price: '¥19.9',
+        period: '/月',
+        features: [
+            'AI 文章生成：10次/天',
+            'AI 图片生成：10次/天',
+            'AI 智能对话：50次/天',
+            '优先客服支持'
+        ],
+        buttonText: '敬请期待',
+        buttonClass: 'btn-vip'
+    },
+    {
+        name: 'SVIP',
+        price: '¥49.9',
+        period: '/月',
+        features: [
+            'AI 文章生成：20次/天',
+            'AI 图片生成：20次/天',
+            'AI 智能对话：100次/天',
+            '专属客服支持',
+            '高级功能优先体验'
+        ],
+        buttonText: '敬请期待',
+        buttonClass: 'btn-svip'
+    }
+];
 ```
 
 ## 🎨 微信公众号排版模块详解

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIMORELOGY TOOLS - AI文章生成平台</title>
+    <link rel="stylesheet" href="styles/header.css">
     <style>
         * {
             margin: 0;
@@ -17,62 +18,6 @@
             min-height: 100vh;
         }
 
-        /* 头部导航 */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .logo-icon {
-            font-size: 32px;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: #666;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: #667eea;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
 
         /* 主要内容区域 */
         .main-container {
@@ -250,6 +195,162 @@
             }
         }
 
+        /* 定价部分样式 */
+        .pricing-section {
+            margin-top: 80px;
+            padding: 60px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .pricing-intro {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .pricing-intro h2 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .pricing-intro p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid #667eea;
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured::before {
+            content: "推荐";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pricing-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .pricing-price {
+            font-size: 3em;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .pricing-price .currency {
+            font-size: 0.5em;
+            vertical-align: top;
+        }
+
+        .pricing-period {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .pricing-features li {
+            padding: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pricing-features li::before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .pricing-button {
+            width: 100%;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-free {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-free:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-coming-soon {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
         /* 用户等级样式 */
         .user-level-normal { background: #909399; }
         .user-level-vip { background: #E6A23C; }
@@ -269,7 +370,14 @@
             <nav>
                 <ul class="nav-menu">
                     <li><a href="#home">首页</a></li>
-                    <li><a href="#features">功能</a></li>
+                    <li class="dropdown">
+                        <a href="#features">功能</a>
+                        <div class="dropdown-content">
+                            <a href="article-generator.html">公众号爆文生成</a>
+                            <a href="markdown-editor.html?mode=wechat">微信公众号排版</a>
+                            <a href="image-generator.html">AI 图片生成</a>
+                        </div>
+                    </li>
                     <li><a href="#pricing">定价</a></li>
                     <li><a href="#about">关于</a></li>
                 </ul>
@@ -395,16 +503,82 @@
                     </button>
                 </div>
 
-                <!-- 图片生成模块 -->
-                <div class="module-card" data-module="image-generator">
-                    <span class="module-icon">🎨</span>
-                    <h3 class="module-title">AI 图片生成</h3>
-                    <p class="module-description">
-                        基于豆包Seedream 4.0模型，将文字描述转化为精美图片。支持多种尺寸和风格，为您的内容创作提供完美配图。
-                    </p>
-                    <span class="module-status status-available">现已上线</span>
-                    <button class="module-button btn-primary" onclick="openImageGenerator()">
-                        立即使用
+            </div>
+        </section>
+
+        <!-- 定价部分 -->
+        <section class="pricing-section" id="pricing">
+            <div class="pricing-intro">
+                <h2>定价方案</h2>
+                <p>
+                    我们的AI服务基于先进的大模型技术，需要消耗Token来提供服务。<br>
+                    <strong>DeepSeek模型</strong>用于文章生成，费率约为每千Token ¥0.002；<br>
+                    <strong>豆包Seedream 4.0模型</strong>用于图片生成，费率为每张图片 ¥0.2。<br>
+                    为了维持服务质量和控制成本，我们设置了合理的使用限制。请勿过分滥用，否则可能会关闭服务入口。
+                </p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- 免费计划 -->
+                <div class="pricing-card">
+                    <h3 class="pricing-title">免费计划</h3>
+                    <div class="pricing-price">
+                        <span class="currency">¥</span>0
+                    </div>
+                    <div class="pricing-period">永久免费</div>
+                    
+                    <ul class="pricing-features">
+                        <li>公众号爆文生成 <span>10次/天</span></li>
+                        <li>微信公众号排版 <span>无限制</span></li>
+                        <li>AI 图片生成 <span>3次/天</span></li>
+                        <li>基础客服支持 <span>✓</span></li>
+                    </ul>
+                    
+                    <button class="pricing-button btn-free">
+                        登录即享
+                    </button>
+                </div>
+
+                <!-- VIP计划 -->
+                <div class="pricing-card featured">
+                    <h3 class="pricing-title">VIP</h3>
+                    <div class="pricing-price">
+                        <span class="currency">¥</span>19.9
+                    </div>
+                    <div class="pricing-period">每月</div>
+                    
+                    <ul class="pricing-features">
+                        <li>公众号爆文生成 <span>30次/天</span></li>
+                        <li>微信公众号排版 <span>无限制</span></li>
+                        <li>AI 图片生成 <span>10次/天</span></li>
+                        <li>优先客服支持 <span>✓</span></li>
+                        <li>高级模板库 <span>✓</span></li>
+                    </ul>
+                    
+                    <button class="pricing-button btn-premium">
+                        敬请期待
+                    </button>
+                </div>
+
+                <!-- SVIP计划 -->
+                <div class="pricing-card">
+                    <h3 class="pricing-title">SVIP</h3>
+                    <div class="pricing-price">
+                        <span class="currency">¥</span>49.9
+                    </div>
+                    <div class="pricing-period">每月</div>
+                    
+                    <ul class="pricing-features">
+                        <li>公众号爆文生成 <span>100次/天</span></li>
+                        <li>微信公众号排版 <span>无限制</span></li>
+                        <li>AI 图片生成 <span>20次/天</span></li>
+                        <li>专属客服支持 <span>✓</span></li>
+                        <li>全部模板库 <span>✓</span></li>
+                        <li>API接口访问 <span>✓</span></li>
+                    </ul>
+                    
+                    <button class="pricing-button btn-premium">
+                        敬请期待
                     </button>
                 </div>
             </div>
@@ -413,48 +587,38 @@
 
     <!-- 引入微信登录模块 -->
     <script src="sections/wechat-login.js"></script>
-    <!-- 引入文章生成模块 -->
-    <script src="sections/article-generator.js"></script>
+    <!-- 引入Header组件 -->
+    <script src="js/header.js"></script>
     
     <script>
-        // 初始化微信登录模块
-        let wechatLogin;
-        
+        // 初始化页面
         document.addEventListener('DOMContentLoaded', function() {
-            // 创建微信登录实例
-            wechatLogin = new WeChatLoginModule({
-                apiBaseUrl: 'https://aimorelogybackend.site'
-            });
-            
-            // 渲染到导航栏
-            const container = document.getElementById('wechat-login-container');
-            wechatLogin.render(container);
-            
             // 监听登录状态变化
             document.addEventListener('wechatLoginStatusChange', function(event) {
                 const { isLoggedIn, userData } = event.detail;
                 
                 if (isLoggedIn) {
                     console.log('用户已登录:', userData);
-                    // 可以在这里添加登录后的逻辑
                     updateModulesAccess(userData);
                 } else {
                     console.log('用户已退出登录');
-                    // 可以在这里添加退出登录后的逻辑
                     updateModulesAccess(null);
                 }
             });
             
-            // 检查初始登录状态并更新UI
+            // 等待Header组件加载完成后检查登录状态
             setTimeout(() => {
-                const currentUser = wechatLogin.getCurrentUser();
-                if (currentUser) {
-                    console.log('页面加载时发现已登录用户:', currentUser);
-                    updateModulesAccess(currentUser);
-                } else {
-                    updateModulesAccess(null);
+                const wechatLogin = getWeChatLogin();
+                if (wechatLogin) {
+                    const currentUser = wechatLogin.getCurrentUser();
+                    if (currentUser) {
+                        console.log('页面加载时发现已登录用户:', currentUser);
+                        updateModulesAccess(currentUser);
+                    } else {
+                        updateModulesAccess(null);
+                    }
                 }
-            }, 100);
+            }, 500);
         });
 
         // 更新模块访问权限

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI图片生成器 - AIMORELOGY TOOLS</title>
+    <link rel="stylesheet" href="styles/header.css">
     <style>
         * {
             margin: 0;
@@ -17,78 +18,7 @@
             min-height: 100vh;
         }
 
-        /* 头部导航 */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
 
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .logo-icon {
-            font-size: 32px;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: #666;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: #667eea;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .back-btn {
-            padding: 8px 16px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #495057;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .back-btn:hover {
-            background: #e9ecef;
-            transform: translateY(-1px);
-        }
 
         /* 主要内容区域 */
         .main-container {
@@ -120,30 +50,7 @@
     </style>
 </head>
 <body>
-    <!-- 头部导航 -->
-    <header class="header">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <span class="logo-icon">🤖</span>
-                <span>AIMORELOGY</span>
-            </a>
-            
-            <nav>
-                <ul class="nav-menu">
-                    <li><a href="index.html">首页</a></li>
-                    <li><a href="#features">功能</a></li>
-                    <li><a href="#pricing">定价</a></li>
-                    <li><a href="#about">关于</a></li>
-                </ul>
-            </nav>
-            
-            <div class="user-section">
-                <a href="index.html" class="back-btn">← 返回首页</a>
-                <!-- 微信登录模块将在这里渲染 -->
-                <div id="wechat-login-container"></div>
-            </div>
-        </div>
-    </header>
+    <!-- Header组件将通过JavaScript动态加载 -->
 
     <!-- 主要内容 -->
     <main class="main-container">
@@ -153,6 +60,8 @@
 
     <!-- 引入微信登录模块 -->
     <script src="sections/wechat-login.js"></script>
+    <!-- 引入Header组件 -->
+    <script src="js/header.js"></script>
     <!-- 引入图片生成模块 -->
     <script src="sections/image-generator.js"></script>
     

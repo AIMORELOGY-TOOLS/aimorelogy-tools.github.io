@@ -351,6 +351,18 @@
             cursor: not-allowed;
         }
 
+        .pricing-text {
+            width: 100%;
+            padding: 15px 30px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #28a745;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #28a745;
+        }
+
         /* 用户等级样式 */
         .user-level-normal { background: #909399; }
         .user-level-vip { background: #E6A23C; }
@@ -534,9 +546,9 @@
                         <li>基础客服支持 <span>✓</span></li>
                     </ul>
                     
-                    <button class="pricing-button btn-free">
-                        登录即享
-                    </button>
+                    <div class="pricing-text">
+                        <strong>登录即享</strong>
+                    </div>
                 </div>
 
                 <!-- VIP计划 -->
@@ -552,7 +564,6 @@
                         <li>微信公众号排版 <span>无限制</span></li>
                         <li>AI 图片生成 <span>10次/天</span></li>
                         <li>优先客服支持 <span>✓</span></li>
-                        <li>高级模板库 <span>✓</span></li>
                     </ul>
                     
                     <button class="pricing-button btn-premium">
@@ -573,8 +584,7 @@
                         <li>微信公众号排版 <span>无限制</span></li>
                         <li>AI 图片生成 <span>20次/天</span></li>
                         <li>专属客服支持 <span>✓</span></li>
-                        <li>全部模板库 <span>✓</span></li>
-                        <li>API接口访问 <span>✓</span></li>
+                        <li>高级功能优先体验 <span>✓</span></li>
                     </ul>
                     
                     <button class="pricing-button btn-premium">
@@ -606,19 +616,30 @@
                 }
             });
             
-            // 等待Header组件加载完成后检查登录状态
-            setTimeout(() => {
-                const wechatLogin = getWeChatLogin();
-                if (wechatLogin) {
-                    const currentUser = wechatLogin.getCurrentUser();
-                    if (currentUser) {
-                        console.log('页面加载时发现已登录用户:', currentUser);
-                        updateModulesAccess(currentUser);
+            // 等待Header组件和微信登录模块加载完成后检查登录状态
+            function checkLoginStatus() {
+                try {
+                    const wechatLogin = getWeChatLogin();
+                    if (wechatLogin) {
+                        const currentUser = wechatLogin.getCurrentUser();
+                        if (currentUser) {
+                            console.log('页面加载时发现已登录用户:', currentUser);
+                            updateModulesAccess(currentUser);
+                        } else {
+                            updateModulesAccess(null);
+                        }
                     } else {
-                        updateModulesAccess(null);
+                        // 如果还没加载完成，继续等待
+                        setTimeout(checkLoginStatus, 200);
                     }
+                } catch (error) {
+                    console.log('微信登录模块还未加载完成，继续等待...');
+                    setTimeout(checkLoginStatus, 200);
                 }
-            }, 500);
+            }
+            
+            // 延迟检查登录状态
+            setTimeout(checkLoginStatus, 500);
         });
 
         // 更新模块访问权限
@@ -697,40 +718,65 @@
 
         // 打开文章生成器
         function openArticleGenerator() {
-            if (!wechatLogin.getCurrentUser()) {
+            try {
+                const wechatLogin = getWeChatLogin();
+                if (!wechatLogin || !wechatLogin.getCurrentUser()) {
+                    alert('请先登录后使用此功能');
+                    return;
+                }
+                
+                // 创建文章生成器页面
+                window.location.href = 'article-generator.html';
+            } catch (error) {
                 alert('请先登录后使用此功能');
-                return;
             }
-            
-            // 创建文章生成器页面
-            window.location.href = 'article-generator.html';
         }
 
         // 打开微信公众号排版工具
         function openWechatFormat() {
-            if (!wechatLogin.getCurrentUser()) {
+            try {
+                const wechatLogin = getWeChatLogin();
+                if (!wechatLogin || !wechatLogin.getCurrentUser()) {
+                    alert('请先登录后使用此功能');
+                    return;
+                }
+                
+                // 跳转到微信公众号排版页面
+                window.location.href = 'markdown-editor.html?mode=wechat';
+            } catch (error) {
                 alert('请先登录后使用此功能');
-                return;
             }
-            
-            // 跳转到微信公众号排版页面
-            window.location.href = 'markdown-editor.html?mode=wechat';
         }
 
         // 打开AI图片生成器
         function openImageGenerator() {
-            if (!wechatLogin.getCurrentUser()) {
+            try {
+                const wechatLogin = getWeChatLogin();
+                if (!wechatLogin || !wechatLogin.getCurrentUser()) {
+                    alert('请先登录后使用此功能');
+                    return;
+                }
+                
+                // 跳转到图片生成页面
+                window.location.href = 'image-generator.html';
+            } catch (error) {
                 alert('请先登录后使用此功能');
-                return;
             }
-            
-            // 跳转到图片生成页面
-            window.location.href = 'image-generator.html';
         }
 
         // 全局函数，供其他模块调用
         window.getWeChatLogin = function() {
-            return wechatLogin;
+            try {
+                // 优先从Header组件获取
+                if (window.headerComponent && window.headerComponent.getWeChatLogin) {
+                    return window.headerComponent.getWeChatLogin();
+                }
+                // 备用方案：直接返回全局变量（如果存在）
+                return window.wechatLogin || null;
+            } catch (error) {
+                console.log('获取微信登录实例失败:', error);
+                return null;
+            }
         };
     </script>
 </body>

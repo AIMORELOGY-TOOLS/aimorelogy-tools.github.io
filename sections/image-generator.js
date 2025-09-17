@@ -711,44 +711,8 @@ class ImageGeneratorModule {
         console.log('图片生成完成，Token消耗:', tokenConsumed);
     }
 
-    // 更新使用次数
-    async updateUsageCount(tokenConsumed = 0) {
-        try {
-            console.log('开始更新图片生成使用次数...');
-            
-            const requestBody = {
-                token: this.currentUser.token,
-                amount: 1,
-                tokenConsumed: tokenConsumed
-            };
-            
-            const response = await fetch(`${this.config.apiBaseUrl}/update_image_usage`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.currentUser.token}`
-                },
-                body: JSON.stringify(requestBody)
-            });
-            
-            const data = await response.json();
-            console.log('使用次数更新响应:', data);
-            
-            if (data.success) {
-                // 更新本地用户信息
-                this.currentUser.imageUsage = data.usage;
-                this.updateUsageInfo();
-                
-                // 触发用户信息更新事件
-                const event = new CustomEvent('userUsageUpdated', {
-                    detail: { usage: data.usage }
-                });
-                document.dispatchEvent(event);
-            }
-        } catch (error) {
-            console.error('更新使用次数失败:', error);
-        }
-    }
+    // 注意：updateUsageCount 方法已删除，因为后端在 handleGenerateImage 中已经处理了使用次数更新
+    // 避免重复计数问题
 
     // 刷新用户统计信息
     async refreshUserStats() {

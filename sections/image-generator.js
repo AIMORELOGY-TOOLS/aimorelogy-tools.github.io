@@ -667,7 +667,9 @@ class ImageGeneratorModule {
             const tokenConsumed = data.data?.tokenConsumed || data.tokenConsumed || 0;
             
             this.displayResult(imageUrl, tokenConsumed);
-            await this.updateUsageCount(tokenConsumed);
+            // 注意：后端已经更新了使用次数，前端不需要重复更新
+            // 重新获取用户统计信息以更新显示
+            await this.refreshUserStats();
             this.showSuccess('图片生成成功！');
         } else {
             throw new Error(data.error || data.message || '图片生成失败');
@@ -745,6 +747,28 @@ class ImageGeneratorModule {
             }
         } catch (error) {
             console.error('更新使用次数失败:', error);
+        }
+    }
+
+    // 刷新用户统计信息
+    async refreshUserStats() {
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/user_stats`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: this.currentUser.token })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // 更新本地用户信息
+                this.currentUser.imageUsage = data.data.imageUsage;
+                this.updateUsageInfo();
+            }
+        } catch (error) {
+            console.error('刷新用户统计失败:', error);
         }
     }
 

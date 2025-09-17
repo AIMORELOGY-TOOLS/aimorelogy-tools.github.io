@@ -137,9 +137,9 @@ HeaderComponent (js/header.js)
 │   ├── 导航菜单
 │   │   ├── 首页链接
 │   │   ├── 功能下拉菜单
-│   │   │   ├── AI 文章生成
-│   │   │   ├── AI 图片生成
-│   │   │   └── AI 智能对话
+│   │   │   ├── 公众号爆文生成
+│   │   │   ├── 微信公众号排版
+│   │   │   └── AI 图片生成
 │   │   └── 定价链接
 │   └── 用户信息区域
 ├── 样式系统 (styles/header.css)
@@ -187,9 +187,9 @@ document.addEventListener('DOMContentLoaded', function() {
 class HeaderComponent {
     constructor() {
         this.menuItems = [
-            { name: 'AI 文章生成', url: 'article-generator.html' },
-            { name: 'AI 图片生成', url: 'image-generator.html' },
-            { name: 'AI 智能对话', url: 'chat.html' }
+            { name: '公众号爆文生成', url: 'article-generator.html' },
+            { name: '微信公众号排版', url: 'markdown-editor.html?mode=wechat' },
+            { name: 'AI 图片生成', url: 'image-generator.html' }
             // 新功能模块可以在这里添加
         ];
     }
@@ -211,9 +211,9 @@ const pricingPlans = [
         price: '¥0',
         period: '/月',
         features: [
-            'AI 文章生成：3次/天',
+            '公众号爆文生成：3次/天',
             'AI 图片生成：3次/天',
-            'AI 智能对话：10次/天'
+            '微信公众号排版：无限制'
         ],
         buttonText: '登录即享',
         buttonClass: 'btn-free'
@@ -223,9 +223,9 @@ const pricingPlans = [
         price: '¥19.9',
         period: '/月',
         features: [
-            'AI 文章生成：10次/天',
+            '公众号爆文生成：10次/天',
             'AI 图片生成：10次/天',
-            'AI 智能对话：50次/天',
+            '微信公众号排版：无限制',
             '优先客服支持'
         ],
         buttonText: '敬请期待',
@@ -236,9 +236,9 @@ const pricingPlans = [
         price: '¥49.9',
         period: '/月',
         features: [
-            'AI 文章生成：20次/天',
+            '公众号爆文生成：20次/天',
             'AI 图片生成：20次/天',
-            'AI 智能对话：100次/天',
+            '微信公众号排版：无限制',
             '专属客服支持',
             '高级功能优先体验'
         ],

@@ -718,7 +718,7 @@ class ImageGeneratorModule {
     // 刷新用户统计信息
     async refreshUserStats() {
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/user_stats`, {
+            const response = await fetch(`${this.config.apiBaseUrl}/get_user_stats`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

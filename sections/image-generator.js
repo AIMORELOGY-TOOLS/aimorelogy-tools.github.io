@@ -588,7 +588,8 @@ class ImageGeneratorModule {
         // 获取表单数据
         const prompt = this.container.querySelector('#image-prompt')?.value?.trim();
         const size = this.container.querySelector('#image-size')?.value || '2K';
-        const watermark = this.container.querySelector('#watermark')?.checked || true;
+        const watermarkElement = this.container.querySelector('#watermark');
+        const watermark = watermarkElement ? watermarkElement.checked : true;
         
         if (!prompt) {
             this.showError('请输入图片描述');

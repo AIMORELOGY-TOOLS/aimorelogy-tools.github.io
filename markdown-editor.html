@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>微信公众号排版 - AIMORELOGY TOOLS</title>
+    <link rel="stylesheet" href="styles/header.css">
     <link rel="stylesheet" href="sections/markdown-editor.css">
     <link rel="stylesheet" href="sections/wechat-format.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
@@ -21,33 +22,6 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-
-        /* 头部导航 */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 700;
             color: #333;
             text-decoration: none;
         }
@@ -135,34 +109,51 @@
         .user-level-vip { background: #E6A23C; }
         .user-level-svip { background: #F56C6C; }
         .user-level-admin { background: #67C23A; }
+        /* 主要内容区域 */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 60vh;
+            font-size: 18px;
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .main-container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* 用户等级样式 */
+        .user-level-normal { background: #909399; }
+        .user-level-vip { background: #E6A23C; }
+        .user-level-svip { background: #F56C6C; }
+        .user-level-admin { background: #67C23A; }
     </style>
 </head>
 <body>
-    <!-- 头部导航 -->
-    <header class="header">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <span class="logo-icon">🤖</span>
-                <span>AIMORELOGY</span>
-            </a>
-            
-            <nav>
-                <ul class="nav-menu">
-                    <li><a href="index.html">首页</a></li>
-                    <li><a href="#features">功能</a></li>
-                    <li><a href="#pricing">定价</a></li>
-                    <li><a href="#about">关于</a></li>
-                </ul>
-            </nav>
-            
-            <div class="user-section">
-                <a href="index.html" class="back-btn">← 返回首页</a>
-                <!-- 微信登录模块将在这里渲染 -->
-                <div id="wechat-login-container"></div>
-            </div>
-        </div>
-    </header>
-
+    <!-- Header组件将在这里动态加载 -->
+    
     <!-- 主要内容 -->
     <main class="main-container">
         <div id="loading" class="loading">
@@ -181,6 +172,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
     
+    <!-- Header组件 -->
+    <script src="js/header.js"></script>
+    
     <!-- 登录模块 -->
     <script src="sections/wechat-login.js"></script>
     
@@ -194,6 +188,10 @@
         // 页面初始化
         document.addEventListener('DOMContentLoaded', async function() {
             try {
+                // 初始化Header组件
+                const headerComponent = new HeaderComponent();
+                await headerComponent.loadHeader();
+                
                 // 创建微信登录实例
                 const wechatLogin = new WeChatLoginModule({
                     apiBaseUrl: 'https://aimorelogybackend.site'

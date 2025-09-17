@@ -1749,6 +1749,31 @@ getLevelText(level) {
    - 仪表盘的新功能统计卡片
    - 图表数据的新功能统计
 
+#### 后台数据分析图表更新说明
+**文件位置：** `AIMORELOGY-TOOLS-BACKSTAGE/js/charts.js`
+
+**已更新的图表方法：**
+1. `createUsageChart()` - 使用统计柱状图
+   - 同时显示文章生成和图片生成用户数分布
+   - 按使用次数分组：0次、1-5次、6-10次、11-20次、20次以上
+
+2. `createActivityChart()` - 用户活跃度雷达图
+   - 分别显示各等级用户的文章生成和图片生成平均次数
+   - 支持普通用户、VIP、SVIP、管理员四个等级
+
+3. `createTokenDistributionChart()` - Token消耗分布饼图
+   - 统计文章生成+图片生成的总Token消耗分布
+   - 按消耗量分组：0 Token、1-100 Token、101-500 Token、501-1000 Token、1000+ Token
+
+4. `createTokenTrendChart()` - Token消耗趋势图
+   - 分别显示文章生成和图片生成的Token消耗趋势
+   - 最近7天的每日消耗数据对比
+
+**数据来源：**
+- 使用 `window.adminAPI.getAllUsersNew()` 获取用户详细数据
+- 数据结构包含 `articleUsage`、`imageUsage`、`tokenUsage` 字段
+- 自动计算每日和总计统计数据
+
 3. **后端API**：
    - 用户数据结构扩展
    - 使用次数统计更新
@@ -1782,6 +1807,7 @@ user.tokenUsage.新功能 = { daily: 0, total: 0, lastResetDate: "2025-09-16" }
 - [ ] **后台用户列表显示同步**（js/users.js renderUsers函数）
 - [ ] **后台用户详情显示同步**（js/users.js showUserModal函数）
 - [ ] **后台仪表盘统计同步**（index.html + js/main.js）
+- [ ] **后台数据分析图表同步**（js/charts.js 所有相关图表方法）
 - [ ] 等级限制配置（limits对象更新）
 - [ ] 数据结构扩展（用户对象字段）
 - [ ] 测试所有显示位置（前端 + 后台所有相关页面）

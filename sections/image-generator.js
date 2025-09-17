@@ -669,9 +669,9 @@ class ImageGeneratorModule {
             
             this.displayResult(imageUrl, tokenConsumed);
             // 注意：后端已经更新了使用次数，前端不需要重复更新
-            // 重新获取用户统计信息以更新显示
-            await this.refreshUserStats();
-            this.showSuccess('图片生成成功！');
+            // 暂时移除refreshUserStats调用，避免缓存导致的API错误
+            // 用户可以刷新页面查看最新统计
+            this.showSuccess('图片生成成功！请刷新页面查看最新使用统计。');
         } else {
             throw new Error(data.error || data.message || '图片生成失败');
         }

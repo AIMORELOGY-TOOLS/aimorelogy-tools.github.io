@@ -22,93 +22,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-            color: #333;
-            text-decoration: none;
-        }
 
-        .logo-icon {
-            font-size: 32px;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: #666;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: #667eea;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .back-btn {
-            padding: 8px 16px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #495057;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .back-btn:hover {
-            background: #e9ecef;
-            transform: translateY(-1px);
-        }
-
-        /* 主要内容区域 */
-        .main-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 60vh;
-            font-size: 18px;
-            color: white;
-        }
-        
-        .hidden {
-            display: none;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-
-            .nav-container {
-                padding: 0 15px;
-            }
-
-            .main-container {
-                padding: 20px 15px;
-            }
-        }
-
-        /* 用户等级样式 */
-        .user-level-normal { background: #909399; }
-        .user-level-vip { background: #E6A23C; }
-        .user-level-svip { background: #F56C6C; }
-        .user-level-admin { background: #67C23A; }
         /* 主要内容区域 */
         .main-container {
             max-width: 1200px;
@@ -152,7 +66,7 @@
     </style>
 </head>
 <body>
-    <!-- Header组件将在这里动态加载 -->
+    <!-- Header组件将通过JavaScript动态加载 -->
     
     <!-- 主要内容 -->
     <main class="main-container">
@@ -172,28 +86,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
     
-    <!-- Header组件 -->
-    <script src="js/header.js"></script>
-    
-    <!-- 登录模块 -->
+    <!-- 引入微信登录模块 -->
     <script src="sections/wechat-login.js"></script>
-    
+    <!-- 引入Header组件 -->
+    <script src="js/header.js"></script>
     <!-- Markdown编辑器模块 -->
     <script src="sections/markdown-editor.js"></script>
-    
     <!-- 微信公众号排版模块 -->
     <script src="sections/wechat-format.js"></script>
     
     <script>
-        // 页面初始化
+        // 初始化微信登录模块和编辑器
+        let wechatLogin;
+        let editor;
+        
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                // 初始化Header组件
-                const headerComponent = new HeaderComponent();
-                await headerComponent.loadHeader();
-                
                 // 创建微信登录实例
-                const wechatLogin = new WeChatLoginModule({
+                wechatLogin = new WeChatLoginModule({
                     apiBaseUrl: 'https://aimorelogybackend.site'
                 });
                 
@@ -215,7 +125,6 @@
                 const mode = urlParams.get('mode') || 'wechat';
                 
                 const container = document.getElementById('app');
-                let editor;
                 
                 if (mode === 'markdown') {
                     // 初始化Markdown编辑器
@@ -238,11 +147,35 @@
                 document.getElementById('loading').classList.add('hidden');
                 container.classList.remove('hidden');
                 
+                // 监听登录状态变化
+                document.addEventListener('wechatLoginStatusChange', function(event) {
+                    const { isLoggedIn, userData } = event.detail;
+                    
+                    if (isLoggedIn) {
+                        console.log('用户已登录:', userData);
+                        // 重新加载页面以应用新的用户状态
+                        window.location.reload();
+                    } else {
+                        console.log('用户已退出登录');
+                        // 跳转到登录页面
+                        window.location.href = 'wechat-login.html?redirect=' + encodeURIComponent(window.location.href);
+                    }
+                });
+                
             } catch (error) {
                 console.error('初始化失败:', error);
                 document.getElementById('loading').innerHTML = '<div style="color: white;">加载失败: ' + error.message + '<br>请刷新页面重试</div>';
             }
         });
+
+        // 全局函数，供其他模块调用
+        window.getWeChatLogin = function() {
+            return wechatLogin;
+        };
+        
+        window.getEditor = function() {
+            return editor;
+        };
     </script>
 </body>
 </html>

@@ -7,6 +7,12 @@ class HeaderComponent {
     // 加载Header HTML
     async loadHeader() {
         try {
+            // 检查是否已经存在Header，避免重复加载
+            if (document.querySelector('.header')) {
+                console.log('Header已存在，跳过加载');
+                return;
+            }
+            
             const response = await fetch('components/header.html');
             const headerHTML = await response.text();
             
@@ -25,6 +31,12 @@ class HeaderComponent {
 
     // 创建基本Header（备用方案）
     createBasicHeader() {
+        // 检查是否已经存在Header，避免重复创建
+        if (document.querySelector('.header')) {
+            console.log('Header已存在，跳过创建');
+            return;
+        }
+        
         const headerHTML = `
             <header class="header">
                 <div class="nav-container">
